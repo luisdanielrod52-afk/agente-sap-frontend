@@ -18,7 +18,7 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
 
     try {
       if (isRegistering) {
-        // ✅ Registro usando form-data y URL directa
+        // ✅ Registro: enviar datos como form-data a la URL real
         const formData = new URLSearchParams();
         formData.append('usuario', username);
         formData.append('password', password);
@@ -39,16 +39,20 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
         return;
       }
 
-      // ✅ Login con form-data
+      // ✅ Login: enviar datos a /login
       const formData = new URLSearchParams();
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await axios.post(`${API_URL}/login`, formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      const response = await axios.post(
+        `${API_URL}/login`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
       onLogin(response.data.access_token);
     } catch (err: any) {
