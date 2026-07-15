@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import axios from 'axios';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function Login({ onLogin }: { onLogin: (token: string) => void }) {
@@ -17,11 +18,18 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
 
     try {
       if (isRegistering) {
-        // Registro
-          const response = await axios.post('/api/registro',
-          null,
+        // ✅ Registro usando form-data y URL directa
+        const formData = new URLSearchParams();
+        formData.append('usuario', username);
+        formData.append('password', password);
+
+        const response = await axios.post(
+          `${API_URL}/registro`,
+          formData,
           {
-            params: { usuario: username, password: password }
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
           }
         );
         
@@ -31,12 +39,12 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
         return;
       }
 
-      // Login
+      // ✅ Login con form-data
       const formData = new URLSearchParams();
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await axios.post(`${API_URL}/registro`, formData, {
+      const response = await axios.post(`${API_URL}/login`, formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -50,7 +58,7 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
       if (err.response) {
         mensajeError = err.response.data?.detail || err.response.data?.mensaje || mensajeError;
       } else if (err.request) {
-        mensajeError = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:8000';
+        mensajeError = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
       }
       
       setError(mensajeError);
