@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://agentesap-hcm-production.up.railway.app/:path*',
+        destination: 'http://localhost:8000/:path*',
       },
     ];
   },

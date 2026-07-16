@@ -1,18 +1,40 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Login from '@/components/Login';
 import Chat from '@/components/Chat';
 
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>('');
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    const savedUsername = localStorage.getItem('username');
+    if (savedToken) {
+      setToken(savedToken);
+    }
+    if (savedUsername) {
+      setUsername(savedUsername);
+    }
+  }, []);
+
+  const handleLogin = (newToken: string, newUsername: string) => {
+    setToken(newToken);
+    setUsername(newUsername);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('username', newUsername);
+  };
 
   const handleLogout = () => {
     setToken(null);
+    setUsername('');
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
   };
 
   if (!token) {
-    return <Login onLogin={setToken} />;
+    return <Login onLogin={handleLogin} />;
   }
 
-  return <Chat token={token} onLogout={handleLogout} />;
+  return <Chat token={token} onLogout={handleLogout} username={username} />;
 }
