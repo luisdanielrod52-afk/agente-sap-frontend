@@ -18,11 +18,9 @@ export default function Home() {
     }
   }, []);
 
-  const handleLogin = (newToken: string, newUsername: string) => {
+  const handleLogin = (newToken: string) => {
     setToken(newToken);
-    setUsername(newUsername);
     localStorage.setItem('token', newToken);
-    localStorage.setItem('username', newUsername);
   };
 
   const handleLogout = () => {

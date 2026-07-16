@@ -37,11 +37,16 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await axios.post(`${API_URL}/login`, formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
+// Después de recibir el token, guarda el nombre
+const response = await axios.post(`${API_URL}/login`, formData, {
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+});
 
-      onLogin(response.data.access_token, username);
+// Guarda el token y el nombre en localStorage
+localStorage.setItem('token', response.data.access_token);
+localStorage.setItem('username', username);
+
+onLogin(response.data.access_token);
     } catch (err: any) {
       let mensajeError = 'Error en la autenticación';
       if (err.response) {
