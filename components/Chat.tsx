@@ -76,6 +76,42 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
+  // Función para renderizar el contenido con formato
+  const renderContent = (content: string) => {
+    const lines = content.split('\n');
+    return lines.map((line, idx) => {
+      // Títulos con ** **
+      if (line.startsWith('**') && line.endsWith('**')) {
+        return <div key={idx} className="font-bold text-blue-700 mt-2">{line.replace(/\*\*/g, '')}</div>;
+      }
+      // Subtítulos con ###
+      if (line.startsWith('###')) {
+        return <div key={idx} className="font-semibold text-gray-800 mt-3">{line.replace(/###/g, '').trim()}</div>;
+      }
+      // Viñetas
+      if (line.startsWith('- ')) {
+        return <div key={idx} className="flex items-start gap-2 ml-2">
+          <span className="text-blue-500">•</span>
+          <span>{line.substring(2)}</span>
+        </div>;
+      }
+      // Pasos numerados (1., 2., etc.)
+      const numMatch = line.match(/^(\d+)\.\s+(.*)/);
+      if (numMatch) {
+        return <div key={idx} className="flex items-start gap-2 ml-2">
+          <span className="font-bold text-blue-600 min-w-[20px]">{numMatch[1]}.</span>
+          <span>{numMatch[2]}</span>
+        </div>;
+      }
+      // Líneas vacías
+      if (!line.trim()) {
+        return <br key={idx} />;
+      }
+      // Texto normal
+      return <div key={idx} className="leading-relaxed">{line}</div>;
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
@@ -147,23 +183,21 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                     </div>
                   )}
                   <div className="flex-1">
-<div className="prose prose-sm max-w-none prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-  {msg.content.split('\n').map((line, i) => {
-    // Detectar líneas que comienzan con ** (negritas)
-    if (line.startsWith('**') && line.endsWith('**')) {
-      return <div key={i} className="font-bold text-blue-700 mt-2">{line.replace(/\*\*/g, '')}</div>;
-    }
-    // Detectar viñetas (- )
-    if (line.startsWith('- ')) {
-      return <div key={i} className="flex items-start gap-2 ml-2">
-        <span className="text-blue-500">•</span>
-        <span>{line.substring(2)}</span>
-      </div>;
-    }
-    // Líneas normales
-    return line ? <div key={i}>{line}</div> : <br key={i} />;
-  })}
-</div>
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                      {renderContent(msg.content)}
+                    </div>
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-xs font-medium text-gray-500 mb-2">📚 Fuentes consultadas:</p>
+                        <div className="space-y-1">
+                          {msg.sources.map((s, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                              <span className="text-xs text-gray-600">{s.titulo}</span>
+                              <span className="text-xs text-gray-400">({(s.score * 100).toFixed(0)}%)</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {msg.timestamp && msg.role === 'assistant' && (
@@ -205,15 +239,15 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       {/* Input */}
       <div className="border-t border-gray-200 bg-white px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex gap-3">
-<input
-  ref={inputRef}
-  type="text"
-  value={input}
-  onChange={(e) => setInput(e.target.value)}
-  placeholder="Escribe tu pregunta sobre SAP HCM..."
-  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 text-gray-800 bg-white"
-  disabled={loading}
-/>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Escribe tu pregunta sobre SAP HCM..."
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 text-gray-800 bg-white"
+            disabled={loading}
+          />
           <button
             type="submit"
             disabled={loading}
