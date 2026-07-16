@@ -147,19 +147,23 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                     </div>
                   )}
                   <div className="flex-1">
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-500 mb-2">📚 Fuentes consultadas:</p>
-                        <div className="space-y-1">
-                          {msg.sources.map((s, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                              <span className="text-xs text-gray-600">{s.titulo}</span>
-                              <span className="text-xs text-gray-400">({(s.score * 100).toFixed(0)}%)</span>
-                            </div>
-                          ))}
-                        </div>
+<div className="prose prose-sm max-w-none prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+  {msg.content.split('\n').map((line, i) => {
+    // Detectar líneas que comienzan con ** (negritas)
+    if (line.startsWith('**') && line.endsWith('**')) {
+      return <div key={i} className="font-bold text-blue-700 mt-2">{line.replace(/\*\*/g, '')}</div>;
+    }
+    // Detectar viñetas (- )
+    if (line.startsWith('- ')) {
+      return <div key={i} className="flex items-start gap-2 ml-2">
+        <span className="text-blue-500">•</span>
+        <span>{line.substring(2)}</span>
+      </div>;
+    }
+    // Líneas normales
+    return line ? <div key={i}>{line}</div> : <br key={i} />;
+  })}
+</div>
                       </div>
                     )}
                     {msg.timestamp && msg.role === 'assistant' && (
