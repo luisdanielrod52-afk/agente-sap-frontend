@@ -201,15 +201,15 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       {/* Input */}
       <div className="border-t border-gray-200 bg-white px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex gap-3">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe tu pregunta sobre SAP HCM..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50"
-            disabled={loading}
-          />
+<input
+  ref={inputRef}
+  type="text"
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  placeholder="Escribe tu pregunta sobre SAP HCM..."
+  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 text-gray-800 bg-white"
+  disabled={loading}
+/>
           <button
             type="submit"
             disabled={loading}
