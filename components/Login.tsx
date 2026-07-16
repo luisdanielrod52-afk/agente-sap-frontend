@@ -11,6 +11,14 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // ✅ NUEVOS CAMPOS
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
+  const [email, setEmail] = useState('');
+  const [empresa, setEmpresa] = useState('');
+  const [cargo, setCargo] = useState('');
+  const [telefono, setTelefono] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +30,12 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
         const formData = new URLSearchParams();
         formData.append('usuario', username);
         formData.append('password', password);
+        formData.append('nombre', nombre);
+        formData.append('apellido', apellido);
+        formData.append('email', email);
+        formData.append('empresa', empresa);
+        formData.append('cargo', cargo);
+        formData.append('telefono', telefono);
 
         await axios.post(`${API_URL}/registro`, formData, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -37,16 +51,13 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
       formData.append('username', username);
       formData.append('password', password);
 
-// Después de recibir el token, guarda el nombre
-const response = await axios.post(`${API_URL}/login`, formData, {
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-});
+      const response = await axios.post(`${API_URL}/login`, formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
 
-// Guarda el token y el nombre en localStorage
-localStorage.setItem('token', response.data.access_token);
-localStorage.setItem('username', username);
-
-onLogin(response.data.access_token);
+      localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('username', username);
+      onLogin(response.data.access_token);
     } catch (err: any) {
       let mensajeError = 'Error en la autenticación';
       if (err.response) {
@@ -95,6 +106,72 @@ onLogin(response.data.access_token);
             />
           </div>
           
+          {/* ✅ CAMPOS ADICIONALES - SOLO EN REGISTRO */}
+          {isRegistering && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  placeholder="Tu nombre"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                <input
+                  type="text"
+                  placeholder="Tu apellido"
+                  value={apellido}
+                  onChange={(e) => setApellido(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
+                <input
+                  type="text"
+                  placeholder="Nombre de tu empresa"
+                  value={empresa}
+                  onChange={(e) => setEmpresa(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                <input
+                  type="text"
+                  placeholder="Tu cargo"
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                <input
+                  type="tel"
+                  placeholder="+56 9 1234 5678"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
+                />
+              </div>
+            </>
+          )}
+          
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
               {error}
@@ -115,6 +192,13 @@ onLogin(response.data.access_token);
             onClick={() => {
               setIsRegistering(!isRegistering);
               setError('');
+              // Limpiar campos adicionales al cambiar de modo
+              setNombre('');
+              setApellido('');
+              setEmail('');
+              setEmpresa('');
+              setCargo('');
+              setTelefono('');
             }}
             className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
           >
