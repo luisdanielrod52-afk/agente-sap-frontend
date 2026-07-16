@@ -65,59 +65,45 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error: any) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `❌ Error: ${error.response?.data?.detail || error.message || 'No se pudo obtener respuesta.'}`,
-        timestamp: new Date()
-      }]);
-    } finally {
-      setLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
+  console.error('Error:', error);
+  
+  let mensajeError = '';
+  
+  if (error.response) {
+    // Error del backend
+    const status = error.response.status;
+    const detail = error.response.data?.detail || '';
+    
+    if (status === 401) {
+      mensajeError = '⏳ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+      // Opcional: redirigir al login después de unos segundos
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.reload();
+      }, 3000);
+    } else if (status === 429) {
+      mensajeError = '📈 Has realizado demasiadas consultas en poco tiempo. Espera unos segundos y vuelve a intentarlo.';
+    } else if (status === 500) {
+      mensajeError = '🔧 El servidor está teniendo problemas. Nuestro equipo ya está trabajando en ello. Por favor, intenta más tarde.';
+    } else if (detail.includes('DEEPSEEK_API_KEY')) {
+      mensajeError = '🔑 Error de configuración. Contacta al administrador.';
+    } else {
+      mensajeError = `❌ Error: ${detail || 'No se pudo procesar tu pregunta. Intenta nuevamente.'}`;
     }
-  };
-
-  const copyToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedMessageId(messageId);
-    setTimeout(() => setCopiedMessageId(null), 2000);
-  };
-
-  // Función para renderizar el contenido con formato
-  const renderContent = (content: string) => {
-    const lines = content.split('\n');
-    return lines.map((line, idx) => {
-      // Títulos con ** **
-      if (line.startsWith('**') && line.endsWith('**')) {
-        return <div key={idx} className="font-bold text-blue-700 mt-2">{line.replace(/\*\*/g, '')}</div>;
-      }
-      // Subtítulos con ###
-      if (line.startsWith('###')) {
-        return <div key={idx} className="font-semibold text-gray-800 mt-3">{line.replace(/###/g, '').trim()}</div>;
-      }
-      // Viñetas
-      if (line.startsWith('- ')) {
-        return <div key={idx} className="flex items-start gap-2 ml-2">
-          <span className="text-blue-500">•</span>
-          <span>{line.substring(2)}</span>
-        </div>;
-      }
-      // Pasos numerados (1., 2., etc.)
-      const numMatch = line.match(/^(\d+)\.\s+(.*)/);
-      if (numMatch) {
-        return <div key={idx} className="flex items-start gap-2 ml-2">
-          <span className="font-bold text-blue-600 min-w-[20px]">{numMatch[1]}.</span>
-          <span>{numMatch[2]}</span>
-        </div>;
-      }
-      // Líneas vacías
-      if (!line.trim()) {
-        return <br key={idx} />;
-      }
-      // Texto normal
-      return <div key={idx} className="leading-relaxed">{line}</div>;
-    });
-  };
+  } else if (error.request) {
+    // No hubo respuesta del servidor
+    mensajeError = '🌐 No pudimos conectar con el servidor. Verifica tu conexión a internet o intenta más tarde.';
+  } else {
+    mensajeError = `❌ Error inesperado: ${error.message || 'Intenta nuevamente.'}`;
+  }
+  
+  setMessages(prev => [...prev, {
+    role: 'assistant',
+    content: mensajeError,
+    timestamp: new Date()
+  }]);
+}
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -239,47 +225,26 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           })}
           
           {loading && (
-            <div className="flex justify-start animate-in fade-in duration-300">
-              <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-bl-none shadow-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    S
-                  </div>
-                  <span className="text-sm text-gray-500">Escribiendo...</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
-                  </div>
-                </div>
-              </div>
+  <div className="flex justify-start animate-in fade-in duration-300">
+    <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+          S
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Buscando respuesta</span>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
             </div>
-          )}
-          <div ref={messagesEndRef} />
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            {loading ? 'Consultando documentación...' : ''}
+          </p>
         </div>
       </div>
-
-      {/* Input */}
-      <div className="border-t border-gray-200 bg-white px-4 py-4">
-        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex gap-3">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe tu pregunta sobre SAP HCM..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 text-gray-800 bg-white"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-          >
-            {loading ? '⏳' : 'Enviar'}
-          </button>
-        </form>
-      </div>
     </div>
-  );
-}
+  </div>
+)}
