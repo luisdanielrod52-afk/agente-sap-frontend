@@ -29,6 +29,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +75,12 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+  };
+
+  const copyToClipboard = (text: string, messageId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessageId(messageId);
+    setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
   // Función para renderizar el contenido con formato
@@ -164,57 +171,72 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           )}
 
           {/* Messages */}
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-            >
+          {messages.map((msg, idx) => {
+            const messageId = `msg-${idx}`;
+            return (
               <div
-                className={`max-w-3xl p-4 rounded-2xl shadow-sm ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none'
-                    : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
-                }`}
+                key={idx}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
               >
-                <div className="flex items-start gap-3">
-                  {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                      S
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="whitespace-pre-wrap leading-relaxed">
-                      {renderContent(msg.content)}
-                    </div>
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-500 mb-2">📚 Fuentes consultadas:</p>
-                        <div className="space-y-1">
-                          {msg.sources.map((s, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                              <span className="text-xs text-gray-600">{s.titulo}</span>
-                              <span className="text-xs text-gray-400">({(s.score * 100).toFixed(0)}%)</span>
-                            </div>
-                          ))}
-                        </div>
+                <div
+                  className={`max-w-3xl p-4 rounded-2xl shadow-sm ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none'
+                      : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {msg.role === 'assistant' && (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        S
                       </div>
                     )}
-                    {msg.timestamp && msg.role === 'assistant' && (
-                      <p className="text-xs text-gray-400 mt-2">
-                        {msg.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                    <div className="flex-1">
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {renderContent(msg.content)}
+                      </div>
+                      
+                      {/* ✅ BOTÓN COPIAR - SOLO PARA ASISTENTE */}
+                      {msg.role === 'assistant' && (
+                        <button
+                          onClick={() => copyToClipboard(msg.content, messageId)}
+                          className="text-xs text-gray-400 hover:text-gray-600 transition-colors mt-2 flex items-center gap-1"
+                        >
+                          {copiedMessageId === messageId ? '✅ Copiado!' : '📋 Copiar respuesta'}
+                        </button>
+                      )}
+                      
+                      {msg.sources && msg.sources.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs font-medium text-gray-500 mb-2">📚 Fuentes consultadas:</p>
+                          <div className="space-y-1">
+                            {msg.sources.map((s, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                                <span className="text-xs text-gray-600">{s.titulo}</span>
+                                <span className="text-xs text-gray-400">({(s.score * 100).toFixed(0)}%)</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {msg.timestamp && msg.role === 'assistant' && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          {msg.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        U
+                      </div>
                     )}
                   </div>
-                  {msg.role === 'user' && (
-                    <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                      U
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           {loading && (
             <div className="flex justify-start animate-in fade-in duration-300">
@@ -223,10 +245,11 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
                     S
                   </div>
+                  <span className="text-sm text-gray-500">Escribiendo...</span>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
                   </div>
                 </div>
               </div>
