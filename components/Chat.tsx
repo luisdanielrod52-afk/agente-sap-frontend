@@ -1,6 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import UserMenu from './UserMenu';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import CodeBlock from './CodeBlock';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -8,6 +12,7 @@ interface Message {
   sources?: { titulo: string; score: number }[];
   timestamp?: Date;
   fuente_detalle?: string;
+  id?: string;
 }
 
 const SUGERENCIAS = [
@@ -25,15 +30,17 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       content: username 
         ? `👋 ¡Bienvenido, ${username}! Soy tu Agente Experto SAP HCM.\n\nPregúntame sobre:\n• Configuración de nómina\n• Infotipos (PA0000, PA0001, etc.)\n• Tablas y transacciones\n• Reglas y esquemas\n• Errores y soluciones`
         : `👋 ¡Bienvenido al Agente Experto SAP HCM!\n\nPregúntame sobre:\n• Configuración de nómina\n• Infotipos (PA0000, PA0001, etc.)\n• Tablas y transacciones\n• Reglas y esquemas\n• Errores y soluciones`,
-      timestamp: new Date()
+      timestamp: new Date(),
+      id: 'welcome'
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [loadingText, setLoadingText] = useState('Consultando documentación...');
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -78,7 +85,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         content: response.data.respuesta || 'No se pudo obtener respuesta.',
         sources: response.data.fuentes || [],
         timestamp: new Date(),
-        fuente_detalle: response.data.fuente_detalle || ''
+        fuente_detalle: response.data.fuente_detalle || '',
+        id: `msg-${Date.now()}`
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error: any) {
@@ -127,58 +135,58 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
+  const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      await axios.post(
+        `${API_URL}/feedback`,
+        { messageId, tipo },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFeedbackStatus(prev => ({ ...prev, [messageId]: tipo }));
+      setTimeout(() => {
+        setFeedbackStatus(prev => {
+          const newState = { ...prev };
+          delete newState[messageId];
+          return newState;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Error enviando feedback:', error);
+    }
+  };
+
   // Renderizar contenido con negritas y formato
   const renderContent = (content: string) => {
-    const lines = content.split('\n');
-    
-    return lines.map((line, idx) => {
-      // Convertir **texto** a negritas
-      const partes = line.split(/\*\*(.*?)\*\*/g);
-      
-      if (partes.length > 1) {
-        return (
-          <div key={idx} className="leading-relaxed">
-            {partes.map((part, i) => {
-              if (i % 2 === 1) {
-                return <strong key={i} className="font-bold text-blue-700">{part}</strong>;
-              }
-              return <span key={i}>{part}</span>;
-            })}
-          </div>
-        );
-      }
-      
-      // Títulos con ###
-      if (line.startsWith('###')) {
-        return <div key={idx} className="font-semibold text-gray-800 dark:text-gray-200 mt-3">{line.replace(/###/g, '').trim()}</div>;
-      }
-      // Viñetas
-      if (line.startsWith('- ')) {
-        return <div key={idx} className="flex items-start gap-2 ml-2">
-          <span className="text-blue-500">•</span>
-          <span>{line.substring(2)}</span>
-        </div>;
-      }
-      // Pasos numerados
-      const numMatch = line.match(/^(\d+)\.\s+(.*)/);
-      if (numMatch) {
-        return <div key={idx} className="flex items-start gap-2 ml-2">
-          <span className="font-bold text-blue-600 min-w-[20px]">{numMatch[1]}.</span>
-          <span>{numMatch[2]}</span>
-        </div>;
-      }
-      // Líneas vacías
-      if (!line.trim()) {
-        return <br key={idx} />;
-      }
-      // Texto normal
-      return <div key={idx} className="leading-relaxed">{line}</div>;
-    });
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({ inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            return !inline && match ? (
+              <CodeBlock className={className}>
+                {String(children).replace(/\n$/, '')}
+              </CodeBlock>
+            ) : (
+              <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-sm`} {...props}>
+                {children}
+              </code>
+            );
+          },
+          pre({ children }) {
+            return <div className="my-2">{children}</div>;
+          }
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
   };
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {/* Header con menú de perfil */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -192,21 +200,14 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Experto en Recursos Humanos</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
+          <UserMenu username={username || 'Usuario'} onLogout={onLogout} />
         </div>
       </header>
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-6">
-          {/* Sugerencias */}
+          {/* Sugerencias - solo al inicio */}
           {messages.length === 1 && (
             <div className="mb-6">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">💡 Preguntas sugeridas:</p>
@@ -229,7 +230,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
 
           {/* Messages */}
           {messages.map((msg, idx) => {
-            const messageId = `msg-${idx}`;
+            const messageId = msg.id || `msg-${idx}`;
             return (
               <div
                 key={idx}
@@ -255,12 +256,52 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       
                       {/* Badge de fuente */}
                       {msg.fuente_detalle && (
-                        <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                          {msg.fuente_detalle}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            msg.fuente_detalle.includes('internet') 
+                              ? 'bg-green-100 text-green-700 border border-green-200'
+                              : msg.fuente_detalle.includes('documentación')
+                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                : 'bg-gray-100 text-gray-600 border border-gray-200'
+                          }`}>
+                            {msg.fuente_detalle}
+                          </span>
                         </div>
                       )}
                       
-                      {/* Botón copiar - SOLO PARA ASISTENTE */}
+                      {/* Botones de feedback */}
+                      {msg.role === 'assistant' && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            onClick={() => handleFeedback(messageId, 'positive')}
+                            className={`text-sm transition-colors ${
+                              feedbackStatus[messageId] === 'positive' 
+                                ? 'text-green-600' 
+                                : 'text-gray-400 hover:text-green-600'
+                            }`}
+                            aria-label="Respuesta útil"
+                          >
+                            👍
+                          </button>
+                          <button
+                            onClick={() => handleFeedback(messageId, 'negative')}
+                            className={`text-sm transition-colors ${
+                              feedbackStatus[messageId] === 'negative' 
+                                ? 'text-red-600' 
+                                : 'text-gray-400 hover:text-red-600'
+                            }`}
+                            aria-label="Respuesta no útil"
+                          >
+                            👎
+                          </button>
+                          <span className="text-xs text-gray-400 ml-1">
+                            {feedbackStatus[messageId] === 'positive' && '¡Gracias!'}
+                            {feedbackStatus[messageId] === 'negative' && 'Gracias por tu feedback'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Botón copiar */}
                       {msg.role === 'assistant' && (
                         <button
                           onClick={() => copyToClipboard(msg.content, messageId)}
@@ -270,6 +311,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </button>
                       )}
                       
+                      {/* Fuentes consultadas */}
                       {msg.sources && msg.sources.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">📚 Fuentes consultadas:</p>
@@ -331,17 +373,24 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         </div>
       </div>
 
-      {/* Input */}
+      {/* Input multilínea */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex gap-3">
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe tu pregunta sobre SAP HCM..."
-            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 placeholder-gray-400 dark:placeholder-gray-500"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            placeholder="Escribe tu pregunta sobre SAP HCM... (Shift+Enter para nueva línea)"
+            rows={1}
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 placeholder-gray-400 dark:placeholder-gray-500 resize-none max-h-48 overflow-y-auto"
             disabled={loading}
+            style={{ minHeight: '52px' }}
           />
           <button
             type="submit"
