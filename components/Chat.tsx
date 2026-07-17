@@ -5,6 +5,7 @@ import UserMenu from './UserMenu';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
+import Historial from './Historial';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -135,6 +136,19 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
+  const cargarConversacion = (pregunta: string) => {
+    setInput(pregunta);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+      const inputContainer = document.querySelector('.border-t.border-gray-200');
+      if (inputContainer) {
+        inputContainer.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -199,9 +213,10 @@ code({ className, children, ...props }) {
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Experto en Recursos Humanos</p>
             </div>
-          </div>
-          <UserMenu username={username || 'Usuario'} onLogout={onLogout} />
-        </div>
+         <div className="flex items-center gap-3">
+  <Historial token={token} onSelectConversacion={cargarConversacion} />
+  <UserMenu username={username || 'Usuario'} onLogout={onLogout} />
+</div>
       </header>
 
       {/* Chat Area */}
