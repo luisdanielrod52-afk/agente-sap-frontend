@@ -37,15 +37,16 @@ export default function Login({ onLogin }: { onLogin: (token: string) => void })
         formData.append('cargo', cargo);
         formData.append('telefono', telefono);
 
-        await axios.post(`${API_URL}/registro`, formData, {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-        
-        alert('✅ Usuario registrado exitosamente');
-        setIsRegistering(false);
-        setLoading(false);
-        return;
-      }
+  const response = await axios.post(
+    `${API_URL}/registro`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+}
 
       const formData = new URLSearchParams();
       formData.append('username', username);
