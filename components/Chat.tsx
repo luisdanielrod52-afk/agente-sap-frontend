@@ -176,18 +176,18 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-code({ className, children, ...props }) {
-  const match = /language-(\w+)/.exec(className || '');
-  return match ? (
-    <CodeBlock className={className}>
-      {String(children).replace(/\n$/, '')}
-    </CodeBlock>
-  ) : (
-    <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-sm`} {...props}>
-      {children}
-    </code>
-  );
-},
+          code({ className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            return match ? (
+              <CodeBlock className={className}>
+                {String(children).replace(/\n$/, '')}
+              </CodeBlock>
+            ) : (
+              <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-sm`} {...props}>
+                {children}
+              </code>
+            );
+          },
           pre({ children }) {
             return <div className="my-2">{children}</div>;
           }
@@ -200,7 +200,7 @@ code({ className, children, ...props }) {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header con menú de perfil */}
+      {/* Header con menú de perfil e historial */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -213,10 +213,12 @@ code({ className, children, ...props }) {
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Experto en Recursos Humanos</p>
             </div>
-         <div className="flex items-center gap-3">
-  <Historial token={token} onSelectConversacion={cargarConversacion} />
-  <UserMenu username={username || 'Usuario'} onLogout={onLogout} />
-</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Historial token={token} onSelectConversacion={cargarConversacion} />
+            <UserMenu username={username || 'Usuario'} onLogout={onLogout} />
+          </div>
+        </div>
       </header>
 
       {/* Chat Area */}
