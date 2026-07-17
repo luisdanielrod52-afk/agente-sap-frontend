@@ -162,18 +162,18 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({ inline, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
-            return !inline && match ? (
-              <CodeBlock className={className}>
-                {String(children).replace(/\n$/, '')}
-              </CodeBlock>
-            ) : (
-              <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-sm`} {...props}>
-                {children}
-              </code>
-            );
-          },
+code({ className, children, ...props }) {
+  const match = /language-(\w+)/.exec(className || '');
+  return match ? (
+    <CodeBlock className={className}>
+      {String(children).replace(/\n$/, '')}
+    </CodeBlock>
+  ) : (
+    <code className={`${className} bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-sm`} {...props}>
+      {children}
+    </code>
+  );
+},
           pre({ children }) {
             return <div className="my-2">{children}</div>;
           }
