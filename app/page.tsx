@@ -37,37 +37,42 @@ export default function LandingPage() {
 
             {/* Botones */}
             <div className="flex items-center gap-3">
-{isLoggedIn ? (
-  <>
-    <Link
-      href="/chat"
-      className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-lg hover:shadow-xl"
-    >
-      Ir al Chat
-    </Link>
-    <Link
-      href="/logout"
-      className="text-gray-600 hover:text-red-600 transition-colors font-medium text-sm"
-    >
-      Cerrar Sesión
-    </Link>
-  </>
-) : (
-  <>
-    <Link
-      href="/login"
-      className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
-    >
-      Iniciar Sesión
-    </Link>
-    <Link
-      href="/registro"
-      className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-lg hover:shadow-xl"
-    >
-      Probar gratis 🚀
-    </Link>
-  </>
-)}
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href="/chat"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Ir al Chat
+                  </Link>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('token');
+                      localStorage.removeItem('username');
+                      setIsLoggedIn(false);
+                      router.push('/');
+                    }}
+                    className="text-gray-600 hover:text-red-600 transition-colors font-medium text-sm"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    Iniciar Sesión
+                  </Link>
+                  <Link
+                    href="/registro"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Probar gratis 🚀
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -95,26 +100,20 @@ export default function LandingPage() {
               href="/registro"
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-xl hover:shadow-2xl text-lg"
             >
-{/* ========== CTA FINAL ========== */}
-<section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-indigo-600">
-  <div className="max-w-4xl mx-auto text-center">
-    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-      ¿Listo para transformar tu forma de trabajar con SAP HCM?
-    </h2>
-    <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-      Únete a cientos de profesionales que ya están usando el Agente SAP HCM.
-    </p>
-    <Link
-      href="/registro"
-      className="inline-block px-10 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 transition-all font-bold text-lg shadow-2xl hover:shadow-3xl"
-    >
-      🚀 Probar gratis ahora
-    </Link>
-    <p className="mt-4 text-sm text-blue-200">
-      Sin tarjeta de crédito • 10 consultas gratis • Acceso inmediato
-    </p>
-  </div>
-</section>
+              🚀 Comenzar ahora
+            </Link>
+            <a
+              href="#como-funciona"
+              className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all font-medium text-lg"
+            >
+              Ver demo
+            </a>
+          </div>
+          <p className="mt-6 text-sm text-gray-400">
+            Sin tarjeta de crédito • 10 consultas gratis • Acceso inmediato
+          </p>
+        </div>
+      </section>
 
       {/* ========== BENEFICIOS ========== */}
       <section id="beneficios" className="py-20 px-4 bg-white">
@@ -181,6 +180,27 @@ export default function LandingPage() {
               <p className="text-gray-500">Con transacciones, tablas y pasos detallados.</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ========== CTA FINAL ========== */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            ¿Listo para transformar tu forma de trabajar con SAP HCM?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Únete a cientos de profesionales que ya están usando el Agente SAP HCM.
+          </p>
+          <Link
+            href="/registro"
+            className="inline-block px-10 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-100 transition-all font-bold text-lg shadow-2xl hover:shadow-3xl"
+          >
+            🚀 Probar gratis ahora
+          </Link>
+          <p className="mt-4 text-sm text-blue-200">
+            Sin tarjeta de crédito • 10 consultas gratis • Acceso inmediato
+          </p>
         </div>
       </section>
 
