@@ -15,8 +15,8 @@ interface Message {
   timestamp?: Date;
   fuente_detalle?: string;
   id?: string;
-  imagen?: string; // URL de la imagen en base64
-  imagen_texto?: string; // Texto extraído de la imagen
+  imagen?: string;
+  imagen_texto?: string;
 }
 
 const SUGERENCIAS = [
@@ -51,6 +51,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const [imagen, setImagen] = useState<File | null>(null);
   const [previewImagen, setPreviewImagen] = useState<string | null>(null);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [idiomaOCR, setIdiomaOCR] = useState('spa+eng'); // 🆕 Idioma para OCR
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -141,12 +142,10 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
         alert('❌ La imagen no debe superar los 5MB');
         return;
       }
-      // Validar tipo
       if (!file.type.startsWith('image/')) {
         alert('❌ El archivo debe ser una imagen');
         return;
@@ -181,7 +180,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
       
-      // 1. Agregar mensaje del usuario (con imagen si existe)
+      // 1. Agregar mensaje del usuario
       const userContent = input.trim() 
         ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
         : '📎 Análisis de imagen';
@@ -202,6 +201,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         const formData = new FormData();
         formData.append('pregunta', input.trim() || 'Analiza esta imagen');
         formData.append('imagen', imagen);
+        formData.append('idioma_ocr', idiomaOCR); // 🆕 Enviar idioma seleccionado
         
         response = await axios.post(
           `${API_URL}/consultar-con-imagen`,
@@ -214,7 +214,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           }
         );
         
-        // Limpiar imagen después de enviar
         eliminarImagen();
       } else {
         // 3. Consulta normal sin imagen
@@ -238,11 +237,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       };
       
       setMessages(prev => [...prev, assistantMessage]);
-      
-      // Mostrar notificación de éxito (opcional)
-      if (imagen) {
-        console.log('✅ Imagen procesada correctamente');
-      }
       
     } catch (error: any) {
       console.error('Error:', error);
@@ -626,9 +620,9 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </button>
           </div>
           
-          {/* PREVISUALIZACIÓN DE IMAGEN */}
+          {/* PREVISUALIZACIÓN DE IMAGEN CON SELECTOR DE IDIOMA */}
           {previewImagen && (
-            <div className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-in fade-in">
+            <div className="flex flex-wrap items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-in fade-in">
               <img 
                 src={previewImagen} 
                 alt="Vista previa" 
@@ -637,10 +631,34 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate max-w-[150px] sm:max-w-xs">
                 {imagen?.name}
               </span>
+              
+              {/* 🆕 SELECTOR DE IDIOMA OCR */}
+              <div className="flex items-center gap-2 ml-auto">
+                <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  🌍 Idioma:
+                </label>
+                <select
+                  value={idiomaOCR}
+                  onChange={(e) => setIdiomaOCR(e.target.value)}
+                  className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled={loading || subiendoImagen}
+                >
+                  <option value="spa+eng">🇪🇸 Español + Inglés</option>
+                  <option value="spa">🇪🇸 Solo Español</option>
+                  <option value="eng">🇬🇧 Solo Inglés</option>
+                  <option value="spa+eng+por">🌎 Español + Inglés + Portugués</option>
+                  <option value="fra">🇫🇷 Francés</option>
+                  <option value="deu">🇩🇪 Alemán</option>
+                  <option value="ita">🇮🇹 Italiano</option>
+                  <option value="por">🇵🇹 Portugués</option>
+                  <option value="auto">🤖 Detección automática</option>
+                </select>
+              </div>
+              
               <button
                 type="button"
                 onClick={eliminarImagen}
-                className="ml-auto text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                className="text-red-500 hover:text-red-700 text-sm p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 ✕
               </button>
