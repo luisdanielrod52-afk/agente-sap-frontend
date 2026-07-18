@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import Historial from './Historial';
+import NotificationManager, { NotificationType } from './NotificationManager';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +18,15 @@ interface Message {
   id?: string;
   imagen?: string;
   imagen_texto?: string;
+}
+
+interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message?: string;
+  duration?: number;
+  progress?: number;
 }
 
 const SUGERENCIAS = [
@@ -51,7 +61,10 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const [imagen, setImagen] = useState<File | null>(null);
   const [previewImagen, setPreviewImagen] = useState<string | null>(null);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
-  const [idiomaOCR, setIdiomaOCR] = useState('spa+eng'); // 🆕 Idioma para OCR
+  const [idiomaOCR, setIdiomaOCR] = useState('spa+eng');
+  
+  // ====== ESTADOS PARA NOTIFICACIONES ======
+  const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -138,6 +151,37 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // ====== FUNCIONES PARA NOTIFICACIONES ======
+  const agregarNotificacion = (
+    id: string,
+    type: NotificationType,
+    title: string,
+    message?: string,
+    duration?: number,
+    progress?: number
+  ) => {
+    setNotificaciones(prev => [...prev, { id, type, title, message, duration, progress }]);
+    
+    if (duration && duration > 0) {
+      setTimeout(() => {
+        eliminarNotificacion(id);
+      }, duration);
+    }
+  };
+
+  const eliminarNotificacion = (id: string) => {
+    setNotificaciones(prev => prev.filter(n => n.id !== id));
+  };
+
+  const actualizarNotificacion = (
+    id: string,
+    updates: Partial<Notification>
+  ) => {
+    setNotificaciones(prev => 
+      prev.map(n => n.id === id ? { ...n, ...updates } : n)
+    );
+  };
+
   // ====== MANEJAR SUBIDA DE IMAGEN ======
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -177,33 +221,57 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     setLoading(true);
     setSubiendoImagen(true);
 
+    const notificationId = `notif-${Date.now()}`;
+    
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
       
-      // 1. Agregar mensaje del usuario
-      const userContent = input.trim() 
-        ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
-        : '📎 Análisis de imagen';
-      
-      const userMessage: Message = {
-        role: 'user',
-        content: userContent,
-        timestamp: new Date(),
-        imagen: previewImagen || undefined
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      setInput('');
-      
-      // 2. Si hay imagen, usar endpoint especial
-      let response;
+      // 1. Notificación de inicio
+      agregarNotificacion(
+        notificationId,
+        'progress',
+        '📤 Procesando consulta...',
+        imagen ? 'Analizando imagen...' : 'Consultando documentación...',
+        0,
+        10
+      );
+
+      // 2. Si hay imagen, mostrar progreso de OCR
       if (imagen) {
+        actualizarNotificacion(notificationId, {
+          title: '🔍 Procesando imagen...',
+          message: 'Extrayendo texto con OCR...',
+          progress: 30
+        });
+
+        // Agregar mensaje del usuario
+        const userContent = input.trim() 
+          ? `${input.trim()} [📎 Imagen adjunta]`
+          : '📎 Análisis de imagen';
+        
+        const userMessage: Message = {
+          role: 'user',
+          content: userContent,
+          timestamp: new Date(),
+          imagen: previewImagen || undefined
+        };
+        
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        
+        // Preparar y enviar imagen
         const formData = new FormData();
         formData.append('pregunta', input.trim() || 'Analiza esta imagen');
         formData.append('imagen', imagen);
-        formData.append('idioma_ocr', idiomaOCR); // 🆕 Enviar idioma seleccionado
+        formData.append('idioma_ocr', idiomaOCR);
         
-        response = await axios.post(
+        actualizarNotificacion(notificationId, {
+          title: '🧠 Generando respuesta...',
+          message: 'La IA está analizando la imagen...',
+          progress: 60
+        });
+        
+        const response = await axios.post(
           `${API_URL}/consultar-con-imagen`,
           formData,
           {
@@ -214,29 +282,73 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           }
         );
         
+        // Agregar respuesta del asistente
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: response.data.respuesta || 'No se pudo obtener respuesta.',
+          sources: response.data.fuentes || [],
+          timestamp: new Date(),
+          fuente_detalle: response.data.texto_extraido 
+            ? '🔍 Análisis de imagen con OCR' 
+            : response.data.fuente_detalle || '',
+          imagen_texto: response.data.texto_extraido || undefined
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
         eliminarImagen();
+        
+        // Notificación de éxito
+        actualizarNotificacion(notificationId, {
+          type: 'success',
+          title: '✅ ¡Completado!',
+          message: 'La imagen fue procesada correctamente.',
+          progress: 100
+        });
+        
       } else {
         // 3. Consulta normal sin imagen
-        response = await axios.post(
+        const userMessage: Message = { 
+          role: 'user', 
+          content: input, 
+          timestamp: new Date() 
+        };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        
+        actualizarNotificacion(notificationId, {
+          title: '🔍 Buscando en documentación...',
+          message: 'Consultando fuentes...',
+          progress: 50
+        });
+        
+        const response = await axios.post(
           `${API_URL}/consultar`,
           { pregunta: input },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-      }
 
-      // 4. Agregar respuesta del asistente
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: response.data.respuesta || 'No se pudo obtener respuesta.',
-        sources: response.data.fuentes || [],
-        timestamp: new Date(),
-        fuente_detalle: response.data.texto_extraido 
-          ? '🔍 Análisis de imagen con OCR' 
-          : response.data.fuente_detalle || '',
-        imagen_texto: response.data.texto_extraido || undefined
-      };
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: response.data.respuesta || 'No se pudo obtener respuesta.',
+          sources: response.data.fuentes || [],
+          timestamp: new Date(),
+          fuente_detalle: response.data.fuente_detalle || '',
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        actualizarNotificacion(notificationId, {
+          type: 'success',
+          title: '✅ ¡Listo!',
+          message: 'Consulta procesada exitosamente.',
+          progress: 100
+        });
+      }
       
-      setMessages(prev => [...prev, assistantMessage]);
+      // Eliminar notificación después de 4 segundos
+      setTimeout(() => {
+        eliminarNotificacion(notificationId);
+      }, 4000);
       
     } catch (error: any) {
       console.error('Error:', error);
@@ -271,6 +383,17 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         content: mensajeError,
         timestamp: new Date()
       }]);
+      
+      actualizarNotificacion(notificationId, {
+        type: 'error',
+        title: '❌ Error',
+        message: mensajeError,
+        progress: 100
+      });
+      
+      setTimeout(() => {
+        eliminarNotificacion(notificationId);
+      }, 6000);
       
     } finally {
       setLoading(false);
@@ -632,7 +755,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                 {imagen?.name}
               </span>
               
-              {/* 🆕 SELECTOR DE IDIOMA OCR */}
+              {/* SELECTOR DE IDIOMA OCR */}
               <div className="flex items-center gap-2 ml-auto">
                 <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   🌍 Idioma:
@@ -666,6 +789,12 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           )}
         </form>
       </div>
+
+      {/* NOTIFICACIONES EN TIEMPO REAL */}
+      <NotificationManager 
+        notifications={notificaciones}
+        onDismiss={eliminarNotificacion}
+      />
     </div>
   );
 }
