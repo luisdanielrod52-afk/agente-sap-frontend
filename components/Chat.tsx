@@ -7,6 +7,8 @@ import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import Historial from './Historial';
 
+
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -43,12 +45,12 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    if (inputRef.current) {
-      inputRef.current.focus();
+// Esto "escucha" cuando cambian los mensajes y activa el guardado
+useEffect(() => {
+    if (mensajes.length > 0 && mensajes.length % 2 === 0) {
+        guardarConversacion(mensajes);
     }
-  }, [messages]);
+}, [mensajes]); // Dependencia: se ejecuta cada vez que 'mensajes' cambia
 
   // Rotar mensajes de carga
   useEffect(() => {
@@ -149,6 +151,32 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }, 100);
   };
 
+// Pega esta función DENTRO del componente Chat (antes del return)
+const guardarConversacion = async (mensajesActuales: any[]) => {
+    // 1. Solo guardar si hay mensajes y estamos logueados
+    if (!token || mensajesActuales.length === 0) return;
+    
+    // 2. Guardar solo cuando haya pregunta + respuesta (pares)
+    if (mensajesActuales.length % 2 !== 0) return;
+
+    try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
+        const titulo = mensajesActuales[0]?.texto?.slice(0, 50) || 'Nueva conversación';
+        
+        const formData = new URLSearchParams();
+        formData.append('titulo', titulo);
+        formData.append('mensajes', JSON.stringify(mensajesActuales));
+
+        await axios.post(`${API_URL}/conversaciones/guardar`, formData, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+    } catch (error) {
+        console.error('Error guardando conversación:', error);
+    }
+};
   const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
