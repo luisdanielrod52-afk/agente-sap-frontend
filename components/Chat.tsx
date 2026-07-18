@@ -25,16 +25,14 @@ const SUGERENCIAS = [
 ];
 
 export default function Chat({ token, onLogout, username }: { token: string; onLogout: () => void; username?: string }) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: username 
-        ? `👋 ¡Bienvenido, ${username}! Soy tu Agente Experto SAP HCM.\n\nPregúntame sobre:\n• Configuración de nómina\n• Infotipos (PA0000, PA0001, etc.)\n• Tablas y transacciones\n• Reglas y esquemas\n• Errores y soluciones`
-        : `👋 ¡Bienvenido al Agente Experto SAP HCM!\n\nPregúntame sobre:\n• Configuración de nómina\n• Infotipos (PA0000, PA0001, etc.)\n• Tablas y transacciones\n• Reglas y esquemas\n• Errores y soluciones`,
-      timestamp: new Date(),
-      id: 'welcome'
-    }
-  ]);
+const [messages, setMessages] = useState<Message[]>([
+  {
+    role: 'assistant',
+    content: `👋 ¡Bienvenido${username ? `, ${username}` : ''}! Soy tu Agente Experto SAP HCM.\n\nPregúntame sobre:\n• Configuración de nómina\n• Infotipos (PA0000, PA0001, etc.)\n• Tablas y transacciones\n• Reglas y esquemas\n• Errores y soluciones`,
+    timestamp: new Date(),
+    id: 'welcome'
+  }
+]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -172,18 +170,47 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
-  const cargarConversacion = (pregunta: string) => {
-    setInput(pregunta);
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
+const cargarConversacion = (pregunta: string) => {
+  setInput(pregunta);
+  setTimeout(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    const inputContainer = document.querySelector('.border-t.border-gray-200');
+    if (inputContainer) {
+      inputContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+};
+
+// ====== OBTENER NOMBRE COMPLETO DEL USUARIO ======
+const [userFullName, setUserFullName] = useState<string>(username || '');
+const [userPlan, setUserPlan] = useState<string>('');
+
+useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
+      const response = await axios.get(`${API_URL}/usuarios/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = response.data;
+      if (data.nombre && data.apellido) {
+        setUserFullName(`${data.nombre} ${data.apellido}`);
+      } else if (data.nombre) {
+        setUserFullName(data.nombre);
       }
-      const inputContainer = document.querySelector('.border-t.border-gray-200');
-      if (inputContainer) {
-        inputContainer.scrollIntoView({ behavior: 'smooth' });
+      if (data.plan) {
+        setUserPlan(data.plan);
       }
-    }, 100);
+    } catch (error) {
+      console.error('Error obteniendo datos del usuario:', error);
+    }
   };
+  fetchUserData();
+}, []);
 
   const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
     try {
