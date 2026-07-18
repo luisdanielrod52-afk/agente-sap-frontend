@@ -7,8 +7,6 @@ import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import Historial from './Historial';
 
-
-
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -45,12 +43,48 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-// Esto "escucha" cuando cambian los mensajes y activa el guardado
-useEffect(() => {
-    if (mensajes.length > 0 && mensajes.length % 2 === 0) {
-        guardarConversacion(mensajes);
+  // ====== FUNCIÓN PARA GUARDAR CONVERSACIÓN ======
+  const guardarConversacion = async (messagesActuales: Message[]) => {
+    // 1. Solo guardar si hay mensajes y estamos logueados
+    if (!token || messagesActuales.length === 0) return;
+    
+    // 2. Guardar solo cuando haya pregunta + respuesta (pares)
+    if (messagesActuales.length % 2 !== 0) return;
+
+    try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
+        // Obtener el primer mensaje del usuario como título
+        const primerMensajeUsuario = messagesActuales.find(m => m.role === 'user');
+        const titulo = primerMensajeUsuario?.content?.slice(0, 50) || 'Nueva conversación';
+        
+        // Preparar mensajes para guardar (sin funciones ni objetos no serializables)
+        const mensajesParaGuardar = messagesActuales.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp?.toISOString() || new Date().toISOString()
+        }));
+        
+        const formData = new URLSearchParams();
+        formData.append('titulo', titulo);
+        formData.append('mensajes', JSON.stringify(mensajesParaGuardar));
+
+        await axios.post(`${API_URL}/conversaciones/guardar`, formData, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+    } catch (error) {
+        console.error('Error guardando conversación:', error);
     }
-}, [mensajes]); // Dependencia: se ejecuta cada vez que 'mensajes' cambia
+  };
+
+  // ====== EFECTO PARA GUARDAR AUTOMÁTICAMENTE ======
+  useEffect(() => {
+    if (messages.length > 0 && messages.length % 2 === 0) {
+        guardarConversacion(messages);
+    }
+  }, [messages]);
 
   // Rotar mensajes de carga
   useEffect(() => {
@@ -151,32 +185,6 @@ useEffect(() => {
     }, 100);
   };
 
-// Pega esta función DENTRO del componente Chat (antes del return)
-const guardarConversacion = async (mensajesActuales: any[]) => {
-    // 1. Solo guardar si hay mensajes y estamos logueados
-    if (!token || mensajesActuales.length === 0) return;
-    
-    // 2. Guardar solo cuando haya pregunta + respuesta (pares)
-    if (mensajesActuales.length % 2 !== 0) return;
-
-    try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
-        const titulo = mensajesActuales[0]?.texto?.slice(0, 50) || 'Nueva conversación';
-        
-        const formData = new URLSearchParams();
-        formData.append('titulo', titulo);
-        formData.append('mensajes', JSON.stringify(mensajesActuales));
-
-        await axios.post(`${API_URL}/conversaciones/guardar`, formData, {
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
-    } catch (error) {
-        console.error('Error guardando conversación:', error);
-    }
-};
   const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
