@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-// 🔥 ID CORRECTO - price_1Tuh4JJKqMr5UkoDX74rFjb5
+// 🔥 IDs CORRECTOS DE STRIPE
 const PRICE_IDS = {
-    pro: 'price_1Tuh4JJKqMr5UkoDX74rFjb5',
+    pro: 'price_1Tuh4J3KqMr5UkoDX74rFjb5',  // ✅ ID CORRECTO
     empresa: 'price_iTuh4oJKqMr5UkoDAEk2FZY0'
 };
 
