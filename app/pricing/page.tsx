@@ -73,10 +73,18 @@ export default function PricingPage() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
+  // 🔍 Verificar variables de entorno
+  useEffect(() => {
+    console.log('🔍 Variables de entorno:', {
+      pro: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
+      empresa: process.env.NEXT_PUBLIC_STRIPE_EMPRESA_PRICE_ID,
+      api: process.env.NEXT_PUBLIC_API_URL
+    });
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      // Si no está logueado, redirigir al login
       router.push('/login');
       return;
     }
@@ -97,6 +105,8 @@ export default function PricingPage() {
   }, [router]);
 
   const handleSubscribe = async (planId: string, priceId: string | null) => {
+    console.log('🔄 handleSubscribe llamado:', { planId, priceId });
+
     // Plan gratuito → redirigir al chat
     if (planId === 'free') {
       router.push('/chat');
@@ -111,9 +121,12 @@ export default function PricingPage() {
 
     // Plan Pro → Stripe Checkout
     if (!priceId) {
+      console.error('❌ priceId es null o undefined');
       alert('❌ Error: El plan Pro no está configurado correctamente.');
       return;
     }
+
+    console.log('✅ Price ID recibido:', priceId);
 
     setLoading(planId);
     try {
@@ -134,11 +147,11 @@ export default function PricingPage() {
         }
       );
       
-      // Redirigir a Stripe Checkout
+      console.log('✅ Checkout creado:', response.data);
       window.location.href = response.data.checkout_url;
       
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('❌ Error en handleSubscribe:', error);
       alert(error.response?.data?.detail || 'Error al procesar el pago');
     } finally {
       setLoading(null);
