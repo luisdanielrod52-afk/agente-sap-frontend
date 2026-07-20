@@ -6,8 +6,8 @@ import axios from 'axios';
 
 // 🔥 IDs CORRECTOS DE STRIPE
 const PRICE_IDS = {
-    pro: 'price_1TvKTlJKqMr5UkoDsWoZ0RHk',  // ✅ Nuevo ID
-    empresa: 'price_iTuh4oJKqMr5UkoDAEk2FZY0'  // Mantén el de empresa
+    pro: 'price_1TvKTlJKqMr5UkoDsWoZ0RHk',  // ✅ Con l minúscula
+    empresa: 'price_iTuh4oJKqMr5UkoDAEk2FZY0'
 };
 
 export default function PricingPage() {
