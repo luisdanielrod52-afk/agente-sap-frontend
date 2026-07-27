@@ -12,7 +12,12 @@ import NotificationManager, { NotificationType } from './NotificationManager';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  sources?: { titulo: string; score: number }[];
+  sources?: { 
+    titulo: string; 
+    score: number; 
+    fuente?: string;  // 'documentacion' | 'internet'
+    url?: string;     // 🆕 URL de la fuente (si es de internet)
+  }[];
   timestamp?: Date;
   fuente_detalle?: string;
   id?: string;
@@ -568,22 +573,27 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-                      {/* BADGE DE FUENTE */}
-                      {msg.fuente_detalle && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            msg.fuente_detalle.includes('internet') 
-                              ? 'bg-green-100 text-green-700 border border-green-200'
-                              : msg.fuente_detalle.includes('OCR')
-                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                                : msg.fuente_detalle.includes('documentación')
-                                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                  : 'bg-gray-100 text-gray-600 border border-gray-200'
-                          }`}>
-                            {msg.fuente_detalle}
-                          </span>
-                        </div>
-                      )}
+{/* BADGE DE FUENTE */}
+{msg.fuente_detalle && (
+  <div className="mt-2 flex items-center gap-2">
+    <span className={`text-xs px-2 py-0.5 rounded-full ${
+      msg.fuente_detalle.includes('internet') 
+        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+        : msg.fuente_detalle.includes('OCR')
+          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+          : msg.fuente_detalle.includes('documentación')
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : 'bg-gray-100 text-gray-600 border border-gray-200'
+    }`}>
+      {msg.fuente_detalle}
+    </span>
+    {msg.sources?.some(s => s.fuente === 'internet') && (
+      <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+        🌐 Incluye búsqueda en internet
+      </span>
+    )}
+  </div>
+)}
                       
                       {/* FEEDBACK */}
                       {msg.role === 'assistant' && msg.id !== 'welcome' && (
@@ -624,38 +634,55 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-                      {/* FUENTES */}
-                      {msg.sources && msg.sources.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">📚 Fuentes:</p>
-                          <div className="space-y-1">
-                            {msg.sources.map((s, i) => (
-                              <div key={i} className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                                <span className="text-xs text-gray-600 dark:text-gray-400 truncate">{s.titulo}</span>
-                                <span className="text-xs text-gray-400 dark:text-gray-500">({(s.score * 100).toFixed(0)}%)</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {msg.timestamp && msg.role === 'assistant' && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          {msg.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                    </div>
-                    {msg.role === 'user' && (
-                      <div className="w-8 h-8 bg-gray-700 dark:bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                        U
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+{/* FUENTES CON SOPORTE PARA INTERNET */}
+{msg.sources && msg.sources.length > 0 && (
+  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+    <div className="flex items-center justify-between">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+        📚 Fuentes consultadas:
+      </p>
+      {msg.sources.some(s => s.fuente === 'internet') && (
+        <span className="text-xs text-blue-500 dark:text-blue-400">
+          🌐 Incluye búsqueda en internet
+        </span>
+      )}
+    </div>
+    <div className="space-y-1 mt-1">
+      {msg.sources.map((s, i) => (
+        <div key={i} className="flex items-center gap-2 group">
+          {/* Indicador de tipo de fuente */}
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+            s.fuente === 'internet' ? 'bg-blue-500' : 
+            s.fuente === 'documentacion' ? 'bg-green-500' : 'bg-gray-400'
+          }`}></span>
+          
+          {/* Título de la fuente */}
+          <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1">
+            {s.titulo}
+          </span>
+          
+          {/* Enlace a la fuente original (si es de internet) */}
+          {s.fuente === 'internet' && s.url && (
+            <a 
+              href={s.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              title="Abrir fuente original"
+            >
+              🔗
+            </a>
+          )}
+          
+          {/* Puntaje de relevancia */}
+          <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+            {s.fuente === 'internet' ? '🌐' : '📚'} {(s.score * 100).toFixed(0)}%
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
           
           {/* LOADING */}
           {loading && (
