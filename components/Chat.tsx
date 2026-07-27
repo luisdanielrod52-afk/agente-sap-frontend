@@ -7,7 +7,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import Historial from './Historial';
-import NotificationManager, { NotificationType } from './NotificationManager';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,23 +14,14 @@ interface Message {
   sources?: { 
     titulo: string; 
     score: number; 
-    fuente?: string;  // 'documentacion' | 'internet'
-    url?: string;     // 🆕 URL de la fuente (si es de internet)
+    fuente?: string;
+    url?: string;
   }[];
   timestamp?: Date;
   fuente_detalle?: string;
   id?: string;
   imagen?: string;
   imagen_texto?: string;
-}
-
-interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message?: string;
-  duration?: number;
-  progress?: number;
 }
 
 const SUGERENCIAS = [
@@ -43,7 +33,6 @@ const SUGERENCIAS = [
 ];
 
 export default function Chat({ token, onLogout, username }: { token: string; onLogout: () => void; username?: string }) {
-  // ====== ESTADOS ======
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -62,20 +51,15 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
   const [userFullName, setUserFullName] = useState<string>(username || '');
   
-  // ====== ESTADOS PARA IMÁGENES ======
   const [imagen, setImagen] = useState<File | null>(null);
   const [previewImagen, setPreviewImagen] = useState<string | null>(null);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [idiomaOCR, setIdiomaOCR] = useState('spa+eng');
   
-  // ====== ESTADOS PARA NOTIFICACIONES ======
-  const [notificaciones, setNotificaciones] = useState<Notification[]>([]);
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ====== OBTENER NOMBRE COMPLETO DEL USUARIO ======
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -98,7 +82,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     fetchUserData();
   }, []);
 
-  // ====== GUARDAR CONVERSACIÓN ======
   const guardarConversacion = async (messagesActuales: Message[]) => {
     if (!token || messagesActuales.length === 0) return;
     if (messagesActuales.length % 2 !== 0) return;
@@ -131,14 +114,12 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  // ====== EFECTO PARA GUARDAR AUTOMÁTICAMENTE ======
   useEffect(() => {
     if (messages.length > 0 && messages.length % 2 === 0) {
       guardarConversacion(messages);
     }
   }, [messages]);
 
-  // ====== ROTAR MENSAJES DE CARGA ======
   useEffect(() => {
     if (loading) {
       const textos = ['🔍 Consultando documentación...', '🌐 Buscando en internet...', '🧠 Generando respuesta...'];
@@ -151,43 +132,10 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   }, [loading]);
 
-  // ====== AUTO-SCROLL ======
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ====== FUNCIONES PARA NOTIFICACIONES ======
-  const agregarNotificacion = (
-    id: string,
-    type: NotificationType,
-    title: string,
-    message?: string,
-    duration?: number,
-    progress?: number
-  ) => {
-    setNotificaciones(prev => [...prev, { id, type, title, message, duration, progress }]);
-    
-    if (duration && duration > 0) {
-      setTimeout(() => {
-        eliminarNotificacion(id);
-      }, duration);
-    }
-  };
-
-  const eliminarNotificacion = (id: string) => {
-    setNotificaciones(prev => prev.filter(n => n.id !== id));
-  };
-
-  const actualizarNotificacion = (
-    id: string,
-    updates: Partial<Notification>
-  ) => {
-    setNotificaciones(prev => 
-      prev.map(n => n.id === id ? { ...n, ...updates } : n)
-    );
-  };
-
-  // ====== MANEJAR SUBIDA DE IMAGEN ======
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -209,7 +157,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  // ====== ELIMINAR IMAGEN ======
   const eliminarImagen = () => {
     setImagen(null);
     setPreviewImagen(null);
@@ -218,7 +165,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  // ====== ENVIAR MENSAJE CON IMAGEN ======
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && !imagen) || loading || subiendoImagen) return;
@@ -226,57 +172,31 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     setLoading(true);
     setSubiendoImagen(true);
 
-    const notificationId = `notif-${Date.now()}`;
-    
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
       
-      // 1. Notificación de inicio
-      agregarNotificacion(
-        notificationId,
-        'progress',
-        '📤 Procesando consulta...',
-        imagen ? 'Analizando imagen...' : 'Consultando documentación...',
-        0,
-        10
-      );
-
-      // 2. Si hay imagen, mostrar progreso de OCR
+      const userContent = input.trim() 
+        ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
+        : '📎 Análisis de imagen';
+      
+      const userMessage: Message = {
+        role: 'user',
+        content: userContent,
+        timestamp: new Date(),
+        imagen: previewImagen || undefined
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      setInput('');
+      
+      let response;
       if (imagen) {
-        actualizarNotificacion(notificationId, {
-          title: '🔍 Procesando imagen...',
-          message: 'Extrayendo texto con OCR...',
-          progress: 30
-        });
-
-        // Agregar mensaje del usuario
-        const userContent = input.trim() 
-          ? `${input.trim()} [📎 Imagen adjunta]`
-          : '📎 Análisis de imagen';
-        
-        const userMessage: Message = {
-          role: 'user',
-          content: userContent,
-          timestamp: new Date(),
-          imagen: previewImagen || undefined
-        };
-        
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        
-        // Preparar y enviar imagen
         const formData = new FormData();
         formData.append('pregunta', input.trim() || 'Analiza esta imagen');
         formData.append('imagen', imagen);
         formData.append('idioma_ocr', idiomaOCR);
         
-        actualizarNotificacion(notificationId, {
-          title: '🧠 Generando respuesta...',
-          message: 'La IA está analizando la imagen...',
-          progress: 60
-        });
-        
-        const response = await axios.post(
+        response = await axios.post(
           `${API_URL}/consultar-con-imagen`,
           formData,
           {
@@ -287,73 +207,27 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           }
         );
         
-        // Agregar respuesta del asistente
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: response.data.respuesta || 'No se pudo obtener respuesta.',
-          sources: response.data.fuentes || [],
-          timestamp: new Date(),
-          fuente_detalle: response.data.texto_extraido 
-            ? '🔍 Análisis de imagen con OCR' 
-            : response.data.fuente_detalle || '',
-          imagen_texto: response.data.texto_extraido || undefined
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
         eliminarImagen();
-        
-        // Notificación de éxito
-        actualizarNotificacion(notificationId, {
-          type: 'success',
-          title: '✅ ¡Completado!',
-          message: 'La imagen fue procesada correctamente.',
-          progress: 100
-        });
-        
       } else {
-        // 3. Consulta normal sin imagen
-        const userMessage: Message = { 
-          role: 'user', 
-          content: input, 
-          timestamp: new Date() 
-        };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        
-        actualizarNotificacion(notificationId, {
-          title: '🔍 Buscando en documentación...',
-          message: 'Consultando fuentes...',
-          progress: 50
-        });
-        
-        const response = await axios.post(
+        response = await axios.post(
           `${API_URL}/consultar`,
           { pregunta: input },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: response.data.respuesta || 'No se pudo obtener respuesta.',
-          sources: response.data.fuentes || [],
-          timestamp: new Date(),
-          fuente_detalle: response.data.fuente_detalle || '',
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        actualizarNotificacion(notificationId, {
-          type: 'success',
-          title: '✅ ¡Listo!',
-          message: 'Consulta procesada exitosamente.',
-          progress: 100
-        });
       }
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: response.data.respuesta || 'No se pudo obtener respuesta.',
+        sources: response.data.fuentes || [],
+        timestamp: new Date(),
+        fuente_detalle: response.data.texto_extraido 
+          ? '🔍 Análisis de imagen con OCR' 
+          : response.data.fuente_detalle || '',
+        imagen_texto: response.data.texto_extraido || undefined
+      };
       
-      // Eliminar notificación después de 4 segundos
-      setTimeout(() => {
-        eliminarNotificacion(notificationId);
-      }, 4000);
+      setMessages(prev => [...prev, assistantMessage]);
       
     } catch (error: any) {
       console.error('Error:', error);
@@ -389,17 +263,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         timestamp: new Date()
       }]);
       
-      actualizarNotificacion(notificationId, {
-        type: 'error',
-        title: '❌ Error',
-        message: mensajeError,
-        progress: 100
-      });
-      
-      setTimeout(() => {
-        eliminarNotificacion(notificationId);
-      }, 6000);
-      
     } finally {
       setLoading(false);
       setSubiendoImagen(false);
@@ -407,14 +270,12 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  // ====== COPIAR AL PORTAPAPELES ======
   const copyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedMessageId(messageId);
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
-  // ====== CARGAR CONVERSACIÓN DEL HISTORIAL ======
   const cargarConversacion = (pregunta: string) => {
     setInput(pregunta);
     setTimeout(() => {
@@ -428,7 +289,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }, 100);
   };
 
-  // ====== FEEDBACK ======
   const handleFeedback = async (messageId: string, tipo: 'positive' | 'negative') => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
@@ -450,7 +310,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  // ====== RENDERIZAR CONTENIDO MARKDOWN ======
   const renderContent = (content: string) => {
     return (
       <ReactMarkdown
@@ -478,10 +337,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     );
   };
 
-  // ====== RENDER ======
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* HEADER */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -502,10 +359,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         </div>
       </header>
 
-      {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-4 sm:space-y-6">
-          {/* SUGERENCIAS */}
           {messages.length === 1 && (
             <div className="mb-4 sm:mb-6">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">💡 Preguntas sugeridas:</p>
@@ -526,7 +381,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           )}
 
-          {/* MENSAJES */}
           {messages.map((msg, idx) => {
             const messageId = msg.id || `msg-${idx}`;
             return (
@@ -552,7 +406,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         {renderContent(msg.content)}
                       </div>
                       
-                      {/* IMAGEN EN MENSAJE DE USUARIO */}
                       {msg.role === 'user' && msg.imagen && (
                         <div className="mt-3">
                           <img 
@@ -563,7 +416,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-                      {/* TEXTO EXTRAÍDO DE IMAGEN */}
                       {msg.imagen_texto && (
                         <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs">
                           <p className="text-gray-500 dark:text-gray-400 font-medium">📝 Texto extraído:</p>
@@ -573,29 +425,27 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-{/* BADGE DE FUENTE */}
-{msg.fuente_detalle && (
-  <div className="mt-2 flex items-center gap-2">
-    <span className={`text-xs px-2 py-0.5 rounded-full ${
-      msg.fuente_detalle.includes('internet') 
-        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-        : msg.fuente_detalle.includes('OCR')
-          ? 'bg-purple-100 text-purple-700 border border-purple-200'
-          : msg.fuente_detalle.includes('documentación')
-            ? 'bg-green-100 text-green-700 border border-green-200'
-            : 'bg-gray-100 text-gray-600 border border-gray-200'
-    }`}>
-      {msg.fuente_detalle}
-    </span>
-    {msg.sources?.some(s => s.fuente === 'internet') && (
-      <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
-        🌐 Incluye búsqueda en internet
-      </span>
-    )}
-  </div>
-)}
+                      {msg.fuente_detalle && (
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            msg.fuente_detalle.includes('internet') 
+                              ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                              : msg.fuente_detalle.includes('OCR')
+                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                : msg.fuente_detalle.includes('documentación')
+                                  ? 'bg-green-100 text-green-700 border border-green-200'
+                                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+                          }`}>
+                            {msg.fuente_detalle}
+                          </span>
+                          {msg.sources?.some(s => s.fuente === 'internet') && (
+                            <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+                              🌐 Incluye búsqueda en internet
+                            </span>
+                          )}
+                        </div>
+                      )}
                       
-                      {/* FEEDBACK */}
                       {msg.role === 'assistant' && msg.id !== 'welcome' && (
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <button
@@ -634,57 +484,68 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-{/* FUENTES CON SOPORTE PARA INTERNET */}
-{msg.sources && msg.sources.length > 0 && (
-  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-    <div className="flex items-center justify-between">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-        📚 Fuentes consultadas:
-      </p>
-      {msg.sources.some(s => s.fuente === 'internet') && (
-        <span className="text-xs text-blue-500 dark:text-blue-400">
-          🌐 Incluye búsqueda en internet
-        </span>
-      )}
-    </div>
-    <div className="space-y-1 mt-1">
-      {msg.sources.map((s, i) => (
-        <div key={i} className="flex items-center gap-2 group">
-          {/* Indicador de tipo de fuente */}
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            s.fuente === 'internet' ? 'bg-blue-500' : 
-            s.fuente === 'documentacion' ? 'bg-green-500' : 'bg-gray-400'
-          }`}></span>
+                      {msg.sources && msg.sources.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              📚 Fuentes consultadas:
+                            </p>
+                            {msg.sources.some(s => s.fuente === 'internet') && (
+                              <span className="text-xs text-blue-500 dark:text-blue-400">
+                                🌐 Incluye búsqueda en internet
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1 mt-1">
+                            {msg.sources.map((s, i) => (
+                              <div key={i} className="flex items-center gap-2 group">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                  s.fuente === 'internet' ? 'bg-blue-500' : 
+                                  s.fuente === 'documentacion' ? 'bg-green-500' : 'bg-gray-400'
+                                }`}></span>
+                                
+                                <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1">
+                                  {s.titulo}
+                                </span>
+                                
+                                {s.fuente === 'internet' && s.url && (
+                                  <a 
+                                    href={s.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                    title="Abrir fuente original"
+                                  >
+                                    🔗
+                                  </a>
+                                )}
+                                
+                                <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+                                  {s.fuente === 'internet' ? '🌐' : '📚'} {(s.score * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {msg.timestamp && msg.role === 'assistant' && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                          {msg.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="w-8 h-8 bg-gray-700 dark:bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        U
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
           
-          {/* Título de la fuente */}
-          <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1">
-            {s.titulo}
-          </span>
-          
-          {/* Enlace a la fuente original (si es de internet) */}
-          {s.fuente === 'internet' && s.url && (
-            <a 
-              href={s.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-              title="Abrir fuente original"
-            >
-              🔗
-            </a>
-          )}
-          
-          {/* Puntaje de relevancia */}
-          <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
-            {s.fuente === 'internet' ? '🌐' : '📚'} {(s.score * 100).toFixed(0)}%
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-          
-          {/* LOADING */}
           {loading && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -713,7 +574,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         </div>
       </div>
 
-      {/* INPUT */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex flex-col gap-3">
           <div className="flex gap-2 sm:gap-3">
@@ -734,7 +594,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
               style={{ minHeight: '52px' }}
             />
             
-            {/* Botón de imagen */}
             <label className="cursor-pointer flex-shrink-0">
               <input
                 ref={fileInputRef}
@@ -770,7 +629,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </button>
           </div>
           
-          {/* PREVISUALIZACIÓN DE IMAGEN CON SELECTOR DE IDIOMA */}
           {previewImagen && (
             <div className="flex flex-wrap items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-in fade-in">
               <img 
@@ -782,7 +640,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                 {imagen?.name}
               </span>
               
-              {/* SELECTOR DE IDIOMA OCR */}
               <div className="flex items-center gap-2 ml-auto">
                 <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   🌍 Idioma:
@@ -816,12 +673,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           )}
         </form>
       </div>
-
-      {/* NOTIFICACIONES EN TIEMPO REAL */}
-      <NotificationManager 
-        notifications={notificaciones}
-        onDismiss={eliminarNotificacion}
-      />
     </div>
   );
 }
