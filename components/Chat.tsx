@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import UserMenu from './UserMenu';
 import ReactMarkdown from 'react-markdown';
@@ -22,6 +23,7 @@ interface Message {
   id?: string;
   imagen?: string;
   imagen_texto?: string;
+  showUpgradeButton?: boolean;
 }
 
 const SUGERENCIAS = [
@@ -33,6 +35,7 @@ const SUGERENCIAS = [
 ];
 
 export default function Chat({ token, onLogout, username }: { token: string; onLogout: () => void; username?: string }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -233,11 +236,16 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       console.error('Error:', error);
       
       let mensajeError = '';
+      let mostrarBotonPro = false;
+      
       if (error.response) {
         const status = error.response.status;
         const detail = error.response.data?.detail || '';
         
-        if (status === 401) {
+        if (status === 402) {
+          mensajeError = `⚠️ ${detail || 'Has alcanzado el límite de consultas gratuitas.'}`;
+          mostrarBotonPro = true;
+        } else if (status === 401) {
           mensajeError = '⏳ Tu sesión ha expirado. Inicia sesión nuevamente.';
           setTimeout(() => {
             localStorage.removeItem('token');
@@ -257,10 +265,15 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         mensajeError = `❌ Error inesperado: ${error.message || 'Intenta nuevamente.'}`;
       }
       
+      const mensajeCompleto = mostrarBotonPro 
+        ? `${mensajeError}\n\n📈 **Actualiza a Pro** para tener consultas ilimitadas y acceder a todas las funcionalidades.`
+        : mensajeError;
+      
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: mensajeError,
-        timestamp: new Date()
+        content: mensajeCompleto,
+        timestamp: new Date(),
+        showUpgradeButton: mostrarBotonPro
       }]);
       
     } finally {
@@ -406,6 +419,23 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         {renderContent(msg.content)}
                       </div>
                       
+                      {msg.showUpgradeButton && (
+                        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+                            🚀 ¿Quieres más consultas?
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                            Actualiza a Pro y obtén consultas ilimitadas, soporte prioritario y mucho más.
+                          </p>
+                          <button
+                            onClick={() => router.push('/pricing')}
+                            className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-md hover:shadow-lg"
+                          >
+                            📊 Ver planes y precios
+                          </button>
+                        </div>
+                      )}
+                      
                       {msg.role === 'user' && msg.imagen && (
                         <div className="mt-3">
                           <img 
@@ -446,7 +476,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         </div>
                       )}
                       
-                      {msg.role === 'assistant' && msg.id !== 'welcome' && (
+                      {msg.role === 'assistant' && msg.id !== 'welcome' && !msg.showUpgradeButton && (
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <button
                             onClick={() => handleFeedback(messageId, 'positive')}
