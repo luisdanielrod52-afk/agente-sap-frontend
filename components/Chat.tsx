@@ -35,27 +35,6 @@ const SUGERENCIAS = [
   "¿Cómo crear una PCR?",
 ];
 
-<header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
-  <div className="max-w-5xl mx-auto flex justify-between items-center">
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-        <span className="text-white font-bold text-xl">S</span>
-      </div>
-      <div>
-        <h1 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
-          Agente <span className="text-blue-600">SAP</span> HCM
-        </h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Experto en Recursos Humanos</p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 sm:gap-3">
-      {/* 🆕 Botón Exportar PDF */}
-      <ExportPDF messages={messages} username={userFullName || username} />
-      <Historial token={token} onSelectConversacion={cargarConversacion} />
-      <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
-    </div>
-  </div>
-</header>
 
 // Sugerencias adicionales (aparecen después de algunas consultas)
 const SUGERENCIAS_ADICIONALES = [
@@ -126,6 +105,28 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     };
     fetchUserData();
   }, []);
+
+<header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
+  <div className="max-w-5xl mx-auto flex justify-between items-center">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+        <span className="text-white font-bold text-xl">S</span>
+      </div>
+      <div>
+        <h1 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
+          Agente <span className="text-blue-600">SAP</span> HCM
+        </h1>
+        <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Experto en Recursos Humanos</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2 sm:gap-3">
+      {/* 🆕 Botón Exportar PDF */}
+      <ExportPDF messages={messages} username={userFullName || username} />
+      <Historial token={token} onSelectConversacion={cargarConversacion} />
+      <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
+    </div>
+  </div>
+</header>
 
   const guardarConversacion = async (messagesActuales: Message[]) => {
     if (!token || messagesActuales.length === 0) return;
