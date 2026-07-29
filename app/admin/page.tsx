@@ -15,7 +15,8 @@ export default function AdminPage() {
     consultas_totales: 0,
     consultas_hoy: 0,
     consultas_semana: 0,
-    promedio_respuesta: 0
+    promedio_respuesta: 0,
+    planes: { gratis: 0, pro: 0, empresa: 0 }
   });
 
   useEffect(() => {
@@ -32,10 +33,26 @@ export default function AdminPage() {
     try {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
-      const response = await axios.get(`${API_URL}/admin/estadisticas`, {
+      
+      // Obtener estadísticas
+      const statsRes = await axios.get(`${API_URL}/admin/estadisticas`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setStats(response.data);
+      
+      // Obtener usuarios para contar planes
+      const usersRes = await axios.get(`${API_URL}/admin/usuarios`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const usuarios = usersRes.data || [];
+      const gratis = usuarios.filter((u: any) => u.plan === 'gratis').length;
+      const pro = usuarios.filter((u: any) => u.plan === 'pro').length;
+      const empresa = usuarios.filter((u: any) => u.plan === 'empresa').length;
+      
+      setStats({
+        ...statsRes.data,
+        planes: { gratis, pro, empresa }
+      });
     } catch (err: any) {
       console.error('Error cargando estadísticas:', err);
       setError('Error al cargar los datos');
@@ -81,7 +98,7 @@ export default function AdminPage() {
         )}
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">Total Usuarios</p>
             <p className="text-2xl font-bold text-gray-800 dark:text-white">{stats.total_usuarios}</p>
@@ -98,26 +115,18 @@ export default function AdminPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Consultas Hoy</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.consultas_hoy}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Última Semana</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white">{stats.consultas_semana}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Promedio Respuesta</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white">{stats.promedio_respuesta}s</p>
-          </div>
         </div>
 
         {/* Tarjetas de navegación */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Dashboard */}
+          {/* 🆕 Dashboard Analítico */}
           <Link
-            href="/admin"
+            href="/admin/dashboard"
             className="block p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
           >
             <div className="text-2xl mb-2">📊</div>
-            <h3 className="font-semibold text-gray-800 dark:text-white">Dashboard</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Estadísticas del sistema</p>
+            <h3 className="font-semibold text-gray-800 dark:text-white">Dashboard Analítico</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Estadísticas y gráficas</p>
           </Link>
 
           {/* Usuarios */}
@@ -140,7 +149,7 @@ export default function AdminPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Historial de consultas</p>
           </Link>
 
-          {/* 🆕 Gestión Empresarial */}
+          {/* Gestión Empresarial */}
           <Link
             href="/admin/empresas"
             className="block p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
