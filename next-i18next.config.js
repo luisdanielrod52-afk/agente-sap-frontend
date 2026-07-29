@@ -2,7 +2,6 @@ module.exports = {
   i18n: {
     defaultLocale: 'es',
     locales: ['es', 'en'],
-    localeDetection: true,
   },
   fallbackLng: {
     default: ['es']
@@ -10,7 +9,4 @@ module.exports = {
   interpolation: {
     escapeValue: false,
   },
-  react: {
-    useSuspense: false,
-  },
-}
+};

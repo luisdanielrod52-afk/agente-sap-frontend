@@ -1,17 +1,15 @@
 /** @type {import('next').NextConfig} */
 
-// 🔥 Configuración de internacionalización
-const { i18n } = require('./next-i18next.config');
-
 const nextConfig = {
-  // 🌍 Internacionalización (ES/EN)
-  i18n: i18n,
+  // 🔥 Configuración de internacionalización (sin localeDetection)
+  i18n: {
+    defaultLocale: 'es',
+    locales: ['es', 'en'],
+  },
 
-  // 🔄 Rewrites para API (local y producción)
+  // 🔄 Rewrites para API
   async rewrites() {
-    // Detectar si estamos en producción o desarrollo
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
     return [
       {
         source: '/api/:path*',
@@ -20,17 +18,13 @@ const nextConfig = {
     ];
   },
 
-  // ⚙️ Otras configuraciones opcionales
-  reactStrictMode: true,
-  swcMinify: true,
-  
-  // 📦 Imágenes (si usas Next/Image)
+  // 🚀 Compresión
+  compress: true,
+
+  // 🖼️ Imágenes
   images: {
     domains: ['localhost', 'agente-sap-hcm.onrender.com'],
   },
-
-  // 🚀 Compresión
-  compress: true,
 };
 
 module.exports = nextConfig;
