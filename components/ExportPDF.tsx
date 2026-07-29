@@ -9,6 +9,7 @@ interface Message {
   content: string;
   timestamp?: Date;
   sources?: { titulo: string; score: number }[];
+  id?: string;
 }
 
 interface ExportPDFProps {
