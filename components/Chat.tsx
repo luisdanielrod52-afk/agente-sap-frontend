@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import Historial from './Historial';
 import ExportPDF from './ExportPDF';
+import LanguageSelector from './LanguageSelector';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -74,7 +75,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Efecto para mostrar sugerencias después de 3 mensajes
   useEffect(() => {
     const countUserMessages = messages.filter(m => m.role === 'user').length;
     if (countUserMessages >= 3 && countUserMessages % 2 === 1) {
@@ -381,7 +381,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* HEADER CON BOTÓN EXPORTAR PDF */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -396,15 +395,14 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* 🆕 Botón Exportar PDF */}
             <ExportPDF messages={messages} username={userFullName || username} />
+            <LanguageSelector />
             <Historial token={token} onSelectConversacion={cargarConversacion} />
             <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
           </div>
         </div>
       </header>
 
-      {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-4 sm:space-y-6">
           {messages.length === 1 && (
@@ -609,7 +607,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             );
           })}
           
-          {/* TYPING INDICATOR */}
           {tipeo && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -635,7 +632,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           )}
           
-          {/* LOADING INDICATOR */}
           {loading && !tipeo && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -658,7 +654,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           )}
           
-          {/* SUGERENCIAS ADICIONALES */}
           {mostrarSugerencias && !loading && (
             <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -687,7 +682,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         </div>
       </div>
 
-      {/* INPUT */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex flex-col gap-3">
           <div className="flex gap-2 sm:gap-3">
