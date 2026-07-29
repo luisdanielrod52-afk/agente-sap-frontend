@@ -35,8 +35,6 @@ const SUGERENCIAS = [
   "¿Cómo crear una PCR?",
 ];
 
-
-// Sugerencias adicionales (aparecen después de algunas consultas)
 const SUGERENCIAS_ADICIONALES = [
   "¿Cómo se calcula la prima de servicios?",
   "¿Qué es el infotipo 0001?",
@@ -105,28 +103,6 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     };
     fetchUserData();
   }, []);
-
-<header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
-  <div className="max-w-5xl mx-auto flex justify-between items-center">
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-        <span className="text-white font-bold text-xl">S</span>
-      </div>
-      <div>
-        <h1 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
-          Agente <span className="text-blue-600">SAP</span> HCM
-        </h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block">Experto en Recursos Humanos</p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 sm:gap-3">
-      {/* 🆕 Botón Exportar PDF */}
-      <ExportPDF messages={messages} username={userFullName || username} />
-      <Historial token={token} onSelectConversacion={cargarConversacion} />
-      <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
-    </div>
-  </div>
-</header>
 
   const guardarConversacion = async (messagesActuales: Message[]) => {
     if (!token || messagesActuales.length === 0) return;
@@ -405,6 +381,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      {/* HEADER CON BOTÓN EXPORTAR PDF */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -419,12 +396,15 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* 🆕 Botón Exportar PDF */}
+            <ExportPDF messages={messages} username={userFullName || username} />
             <Historial token={token} onSelectConversacion={cargarConversacion} />
             <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
           </div>
         </div>
       </header>
 
+      {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-4 sm:space-y-6">
           {messages.length === 1 && (
@@ -629,7 +609,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             );
           })}
           
-          {/* Indicador de tipeo */}
+          {/* TYPING INDICATOR */}
           {tipeo && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -655,6 +635,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           )}
           
+          {/* LOADING INDICATOR */}
           {loading && !tipeo && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -677,7 +658,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             </div>
           )}
           
-          {/* Sugerencias adicionales */}
+          {/* SUGERENCIAS ADICIONALES */}
           {mostrarSugerencias && !loading && (
             <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
@@ -706,6 +687,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         </div>
       </div>
 
+      {/* INPUT */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex flex-col gap-3">
           <div className="flex gap-2 sm:gap-3">
