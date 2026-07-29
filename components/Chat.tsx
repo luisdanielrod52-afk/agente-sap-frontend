@@ -34,6 +34,15 @@ const SUGERENCIAS = [
   "¿Cómo crear una PCR?",
 ];
 
+// Sugerencias adicionales (aparecen después de algunas consultas)
+const SUGERENCIAS_ADICIONALES = [
+  "¿Cómo se calcula la prima de servicios?",
+  "¿Qué es el infotipo 0001?",
+  "¿Cómo se configura una regla de nómina?",
+  "¿Qué tablas se usan para tiempo?",
+  "¿Cómo se hace una retroactividad?",
+];
+
 export default function Chat({ token, onLogout, username }: { token: string; onLogout: () => void; username?: string }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
@@ -53,6 +62,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const [loadingText, setLoadingText] = useState('Consultando documentación...');
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
   const [userFullName, setUserFullName] = useState<string>(username || '');
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [tipeo, setTipeo] = useState(false);
   
   const [imagen, setImagen] = useState<File | null>(null);
   const [previewImagen, setPreviewImagen] = useState<string | null>(null);
@@ -62,6 +73,14 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Efecto para mostrar sugerencias después de 3 mensajes
+  useEffect(() => {
+    const countUserMessages = messages.filter(m => m.role === 'user').length;
+    if (countUserMessages >= 3 && countUserMessages % 2 === 1) {
+      setMostrarSugerencias(true);
+    }
+  }, [messages]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -174,6 +193,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
 
     setLoading(true);
     setSubiendoImagen(true);
+    setTipeo(false);
+    setMostrarSugerencias(false);
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
@@ -191,6 +212,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       
       setMessages(prev => [...prev, userMessage]);
       setInput('');
+      setTipeo(true);
       
       let response;
       if (imagen) {
@@ -218,6 +240,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
+
+      setTipeo(false);
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -275,6 +299,8 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
         timestamp: new Date(),
         showUpgradeButton: mostrarBotonPro
       }]);
+      
+      setTipeo(false);
       
     } finally {
       setLoading(false);
@@ -342,6 +368,9 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           },
           pre({ children }) {
             return <div className="my-2">{children}</div>;
+          },
+          table({ children }) {
+            return <div className="overflow-x-auto my-2">{children}</div>;
           }
         }}
       >
@@ -355,7 +384,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse">
               <span className="text-white font-bold text-xl">S</span>
             </div>
             <div>
@@ -375,7 +404,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:py-6 max-w-5xl mx-auto w-full">
         <div className="space-y-4 sm:space-y-6">
           {messages.length === 1 && (
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-4 sm:mb-6 animate-in fade-in duration-500">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">💡 Preguntas sugeridas:</p>
               <div className="flex flex-wrap gap-2">
                 {SUGERENCIAS.map((sug, idx) => (
@@ -385,7 +414,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       setInput(sug);
                       setTimeout(() => inputRef.current?.focus(), 100);
                     }}
-                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105"
+                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105 hover:shadow-md"
                   >
                     {sug}
                   </button>
@@ -402,7 +431,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
               >
                 <div
-                  className={`max-w-[90%] sm:max-w-3xl p-3 sm:p-4 rounded-2xl shadow-sm ${
+                  className={`max-w-[90%] sm:max-w-3xl p-3 sm:p-4 rounded-2xl shadow-sm transition-all hover:shadow-md ${
                     msg.role === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-none'
                       : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-200 dark:border-gray-700'
@@ -420,7 +449,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       </div>
                       
                       {msg.showUpgradeButton && (
-                        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 animate-in fade-in slide-in-from-bottom-2">
                           <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
                             🚀 ¿Quieres más consultas?
                           </p>
@@ -437,7 +466,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       )}
                       
                       {msg.role === 'user' && msg.imagen && (
-                        <div className="mt-3">
+                        <div className="mt-3 animate-in fade-in">
                           <img 
                             src={msg.imagen} 
                             alt="Imagen adjunta" 
@@ -447,7 +476,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       )}
                       
                       {msg.imagen_texto && (
-                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs">
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs animate-in fade-in">
                           <p className="text-gray-500 dark:text-gray-400 font-medium">📝 Texto extraído:</p>
                           <p className="text-gray-600 dark:text-gray-300 mt-1 max-h-20 overflow-y-auto">
                             {msg.imagen_texto}
@@ -457,7 +486,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       
                       {msg.fuente_detalle && (
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          <span className={`text-xs px-2 py-0.5 rounded-full transition-all ${
                             msg.fuente_detalle.includes('internet') 
                               ? 'bg-blue-100 text-blue-700 border border-blue-200'
                               : msg.fuente_detalle.includes('OCR')
@@ -469,7 +498,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                             {msg.fuente_detalle}
                           </span>
                           {msg.sources?.some(s => s.fuente === 'internet') && (
-                            <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full animate-in fade-in">
                               🌐 Incluye búsqueda en internet
                             </span>
                           )}
@@ -480,10 +509,10 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <button
                             onClick={() => handleFeedback(messageId, 'positive')}
-                            className={`text-sm transition-all ${
+                            className={`text-sm transition-all hover:scale-110 ${
                               feedbackStatus[messageId] === 'positive' 
                                 ? 'text-green-600 scale-110' 
-                                : 'text-gray-400 hover:text-green-600 hover:scale-110'
+                                : 'text-gray-400 hover:text-green-600'
                             }`}
                             aria-label="Respuesta útil"
                           >
@@ -491,10 +520,10 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                           </button>
                           <button
                             onClick={() => handleFeedback(messageId, 'negative')}
-                            className={`text-sm transition-all ${
+                            className={`text-sm transition-all hover:scale-110 ${
                               feedbackStatus[messageId] === 'negative' 
                                 ? 'text-red-600 scale-110' 
-                                : 'text-gray-400 hover:text-red-600 hover:scale-110'
+                                : 'text-gray-400 hover:text-red-600'
                             }`}
                             aria-label="Respuesta no útil"
                           >
@@ -507,7 +536,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                           )}
                           <button
                             onClick={() => copyToClipboard(msg.content, messageId)}
-                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-auto"
+                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-auto hover:scale-105"
                           >
                             {copiedMessageId === messageId ? '✅ Copiado!' : '📋 Copiar'}
                           </button>
@@ -515,7 +544,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                       )}
                       
                       {msg.sources && msg.sources.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 animate-in fade-in">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                               📚 Fuentes consultadas:
@@ -576,7 +605,33 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
             );
           })}
           
-          {loading && (
+          {/* Indicador de tipeo */}
+          {tipeo && (
+            <div className="flex justify-start animate-in fade-in duration-300">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                    S
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Escribiendo respuesta...</span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Esto puede tomar unos segundos
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {loading && !tipeo && (
             <div className="flex justify-start animate-in fade-in duration-300">
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
                 <div className="flex items-center gap-3">
@@ -592,14 +647,37 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                         <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></div>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Esto puede tomar unos segundos
-                    </p>
                   </div>
                 </div>
               </div>
             </div>
           )}
+          
+          {/* Sugerencias adicionales */}
+          {mostrarSugerencias && !loading && (
+            <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl rounded-bl-none shadow-sm max-w-3xl">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  💡 Preguntas relacionadas:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SUGERENCIAS_ADICIONALES.map((sug, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInput(sug);
+                        setTimeout(() => inputRef.current?.focus(), 100);
+                      }}
+                      className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all hover:scale-105"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
       </div>
