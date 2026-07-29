@@ -21,9 +21,9 @@ export default function ExportPDF({ messages, username }: ExportPDFProps) {
   const [exportando, setExportando] = useState(false);
 
   // Filtrar mensajes (excluir el mensaje de bienvenida)
-  const mensajesFiltrados = messages.filter(
-    (msg) => msg.id !== 'welcome' && msg.role !== 'system'
-  );
+const mensajesFiltrados = messages.filter(
+  (msg) => msg.id !== 'welcome'
+);
 
   // Si no hay mensajes, no mostrar el botón
   if (mensajesFiltrados.length === 0) {
