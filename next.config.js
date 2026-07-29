@@ -12,7 +12,7 @@ const nextConfig = {
     ];
   },
 
-  // 🖼️ Imágenes (actualizado)
+  // 🖼️ Imágenes
   images: {
     remotePatterns: [
       {

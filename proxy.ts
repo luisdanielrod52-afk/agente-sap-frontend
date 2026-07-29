@@ -5,14 +5,13 @@ import type { NextRequest } from 'next/server';
 const locales = ['es', 'en'];
 const defaultLocale = 'es';
 
-// Función para obtener el idioma del navegador
 function getLocaleFromRequest(request: NextRequest): string {
   const acceptLanguage = request.headers.get('accept-language') || '';
   const preferredLocale = acceptLanguage.split(',')[0]?.split('-')[0] || '';
   return locales.includes(preferredLocale) ? preferredLocale : defaultLocale;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Verificar si ya tiene un idioma en la URL
