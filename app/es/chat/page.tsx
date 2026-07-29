@@ -6,7 +6,7 @@ import Chat from '../../../components/Chat';
 export default function ChatPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const username = typeof window !== 'undefined' ? localStorage.getItem('username') : '';
+  const username = typeof window !== 'undefined' ? localStorage.getItem('username') || undefined : undefined;
 
   const handleLogout = () => {
     localStorage.removeItem('token');

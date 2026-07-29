@@ -6,16 +6,16 @@ import Chat from '../../../components/Chat';
 export default function ChatPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const username = typeof window !== 'undefined' ? localStorage.getItem('username') : '';
+  const username = typeof window !== 'undefined' ? localStorage.getItem('username') || undefined : undefined;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    router.push('/es/login');
+    router.push('/en/login');
   };
 
   if (!token) {
-    router.push('/es/login');
+    router.push('/en/login');
     return null;
   }
 
