@@ -34,12 +34,8 @@ export default function AdminDashboardPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data);
-    } catch (err: any) {
-      console.error('Error cargando datos:', err);
-      if (err.response?.status === 401) {
-        localStorage.removeItem('token');
-        router.push('/es/login');
-      }
+    } catch (error) {
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -68,7 +64,6 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        {/* Tarjetas de KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">Total Usuarios</p>
@@ -88,7 +83,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Segunda fila de tarjetas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">Última Semana</p>
