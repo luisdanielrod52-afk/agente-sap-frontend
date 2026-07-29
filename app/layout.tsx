@@ -1,22 +1,22 @@
 import { ReactNode } from 'react';
-import RootLayout from '../layout';
 
 interface LayoutProps {
   children: ReactNode;
-  params: Promise<{ lang: string }>; // 🔥 Promise para Next.js 16
+  params?: {
+    lang: string;
+  };
 }
 
-export default async function LangLayout({ children, params }: LayoutProps) {
-  const { lang } = await params; // 🔥 Esperar el promise
-  
+export default function LangLayout({ children, params }: LayoutProps) {
+  const lang = params?.lang || 'es';
   return (
-    <html lang={lang}>
-      <body>{children}</body>
-    </html>
+    <div lang={lang}>
+      {children}
+    </div>
   );
 }
 
-// 🔥 Generar rutas estáticas para cada idioma
+// Generar rutas estáticas
 export async function generateStaticParams() {
   return [{ lang: 'es' }, { lang: 'en' }];
 }
