@@ -86,21 +86,40 @@ export default function PricingPage() {
         fetchUser();
     }, [router]);
 
-    const handleSubscribe = async (planId: string) => {
-        if (planId === 'free') {
-            router.push('/chat');
-            return;
-        }
+const handleSubscribe = async (planId: string) => {
+    if (planId === 'free') {
+        router.push('/chat');
+        return;
+    }
 
-        // 🔥 Redirigir al link de Wompi
+    // 🔥 Obtener el usuario actual para incluirlo en la referencia
+    const token = localStorage.getItem('token');
+    if (!token) {
+        router.push('/login');
+        return;
+    }
+
+    try {
+        // 🔥 Obtener el ID del usuario desde el token JWT
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.sub; // o el campo que tenga el ID
+        
+        // 🔥 Crear referencia con el user_id y plan_id
+        const reference = `sub_${userId}_${planId}_${Date.now()}`;
+        
+        // 🔥 Obtener el link de Wompi
         const link = WOMPI_LINKS[planId as keyof typeof WOMPI_LINKS];
         if (link) {
-            // Abrir en nueva pestaña
-            window.open(link, '_blank');
+            // Abrir el link de Wompi con la referencia
+            window.open(`${link}?reference=${reference}`, '_blank');
         } else {
             alert('❌ Link de pago no disponible');
         }
-    };
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al procesar el pago');
+    }
+};
 
     if (!user) {
         return (
