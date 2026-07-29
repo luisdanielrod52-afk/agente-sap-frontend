@@ -83,9 +83,14 @@ export default function UserMenu({ username, onLogout }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-          {getDisplayName().charAt(0).toUpperCase()}
-        </div>
+<div 
+  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+  style={{ 
+    background: `hsl(${getDisplayName().length * 37 % 360}, 70%, 50%)`
+  }}
+>
+  {getDisplayName().charAt(0).toUpperCase()}
+</div>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">
           {getDisplayName()}
         </span>

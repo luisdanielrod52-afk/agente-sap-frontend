@@ -1,0 +1,70 @@
+{
+  "app_name": "SAP HCM Agent",
+  "app_description": "Your AI-powered HR expert",
+  "menu": {
+    "home": "Home",
+    "pricing": "Pricing",
+    "chat": "Chat",
+    "admin": "Admin",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "landing": {
+    "title": "SAP HCM Agent",
+    "subtitle": "Get instant answers about payroll, infotypes, and SAP HCM configuration.",
+    "cta": "Try for free",
+    "features": {
+      "ai": "AI trained for SAP",
+      "documentation": "Your documentation",
+      "updated": "Updated information"
+    },
+    "users": "100+ active consultants",
+    "consultations": "1,200+ resolved queries",
+    "rating": "4.9 / 5 rating"
+  },
+  "pricing": {
+    "title": "Plans & Pricing",
+    "subtitle": "Choose the plan that best fits your needs",
+    "free": {
+      "name": "Free",
+      "price": "$0",
+      "features": ["3 queries/month", "Basic documentation", "Internet search"]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$120.000 COP",
+      "features": ["Unlimited queries", "Full documentation", "Priority support"]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "price": "$400.000 COP",
+      "features": ["Everything in Pro", "Dedicated API", "24/7 support"]
+    }
+  },
+  "chat": {
+    "placeholder": "Ask your SAP HCM question...",
+    "send": "Send",
+    "loading": "Searching documentation...",
+    "suggestions": "Suggested questions:"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Create account",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "forgot_password": "Forgot your password?",
+    "no_account": "Don't have an account? Register",
+    "has_account": "Already have an account? Login"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  }
+}

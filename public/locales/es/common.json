@@ -1,0 +1,70 @@
+{
+  "app_name": "Agente SAP HCM",
+  "app_description": "Tu experto en Recursos Humanos con IA",
+  "menu": {
+    "home": "Inicio",
+    "pricing": "Precios",
+    "chat": "Chat",
+    "admin": "Admin",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar Sesión"
+  },
+  "landing": {
+    "title": "Agente SAP HCM",
+    "subtitle": "Resuelve dudas de nómina, infotipos y configuración de SAP HCM al instante.",
+    "cta": "Probar gratis",
+    "features": {
+      "ai": "IA entrenada para SAP",
+      "documentation": "Tu documentación",
+      "updated": "Información actualizada"
+    },
+    "users": "100+ consultores activos",
+    "consultations": "1,200+ consultas resueltas",
+    "rating": "4.9 / 5 valoración"
+  },
+  "pricing": {
+    "title": "Planes y precios",
+    "subtitle": "Elige el plan que mejor se adapte a tus necesidades",
+    "free": {
+      "name": "Gratis",
+      "price": "$0",
+      "features": ["3 consultas/mes", "Documentación básica", "Búsqueda en internet"]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$120.000 COP",
+      "features": ["Consultas ilimitadas", "Documentación completa", "Soporte prioritario"]
+    },
+    "enterprise": {
+      "name": "Empresa",
+      "price": "$400.000 COP",
+      "features": ["Todo lo de Pro", "API dedicada", "Soporte 24/7"]
+    }
+  },
+  "chat": {
+    "placeholder": "Escribe tu pregunta sobre SAP HCM...",
+    "send": "Enviar",
+    "loading": "Consultando documentación...",
+    "suggestions": "Preguntas sugeridas:"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Crear cuenta",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "email": "Email",
+    "forgot_password": "¿Olvidaste tu contraseña?",
+    "no_account": "¿No tienes cuenta? Regístrate",
+    "has_account": "¿Ya tienes cuenta? Inicia sesión"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito"
+  }
+}
