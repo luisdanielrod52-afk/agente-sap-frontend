@@ -106,8 +106,24 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Tarjetas de navegación */}
+        {/* Tarjetas de navegación - CON ENLACES CORRECTOS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/es/admin/usuarios"
+            className="block p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+          >
+            <div className="text-2xl mb-2">👥</div>
+            <h3 className="font-semibold text-gray-800 dark:text-white">Usuarios</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Gestionar usuarios y roles</p>
+          </Link>
+          <Link
+            href="/es/admin/consultas"
+            className="block p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+          >
+            <div className="text-2xl mb-2">💬</div>
+            <h3 className="font-semibold text-gray-800 dark:text-white">Consultas</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Historial de consultas</p>
+          </Link>
           <Link
             href="/es/admin/empresas"
             className="block p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
