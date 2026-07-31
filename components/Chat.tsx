@@ -205,129 +205,119 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
-      
-      const userContent = input.trim() 
-        ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
-        : '📎 Análisis de imagen';
-      
-      const userMessage: Message = {
-        role: 'user',
-        content: userContent,
-        timestamp: new Date(),
-        imagen: previewImagen || undefined
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      setInput('');
-      setTipeo(true);
-      
-      let response;
-      if (imagen) {
-        const formData = new FormData();
-        formData.append('pregunta', input.trim() || 'Analiza esta imagen');
-        formData.append('imagen', imagen);
-        formData.append('idioma_ocr', idiomaOCR);
-        
-        response = await axios.post(
-          `${API_URL}/consultar-con-imagen`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data'
-            }
-          }
-        );
-        
-        eliminarImagen();
-      } else {
-        response = await axios.post(
-          `${API_URL}/consultar`,
-          { pregunta: input },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      setTipeo(false);
-
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: response.data.respuesta || 'No se pudo obtener respuesta.',
-        sources: response.data.fuentes || [],
-        timestamp: new Date(),
-        fuente_detalle: response.data.texto_extraido 
-          ? '🔍 Análisis de imagen con OCR' 
-          : response.data.fuente_detalle || '',
-        imagen_texto: response.data.texto_extraido || undefined
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-    setMessages(prev => [...prev, assistantMessage]);
     
+    const userContent = input.trim() 
+      ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
+      : '📎 Análisis de imagen';
+    
+    const userMessage: Message = {
+      role: 'user',
+      content: userContent,
+      timestamp: new Date(),
+      imagen: previewImagen || undefined
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setTipeo(true);
+    
+    let response;
+    if (imagen) {
+      const formData = new FormData();
+      formData.append('pregunta', input.trim() || 'Analiza esta imagen');
+      formData.append('imagen', imagen);
+      formData.append('idioma_ocr', idiomaOCR);
+      
+      response = await axios.post(
+        `${API_URL}/consultar-con-imagen`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      eliminarImagen();
+    } else {
+      response = await axios.post(
+        `${API_URL}/consultar`,
+        { pregunta: input },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    setTipeo(false);
+
+    const assistantMessage: Message = {
+      role: 'assistant',
+      content: response.data.respuesta || 'No se pudo obtener respuesta.',
+      sources: response.data.fuentes || [],
+      timestamp: new Date(),
+      fuente_detalle: response.data.texto_extraido 
+        ? '🔍 Análisis de imagen con OCR' 
+        : response.data.fuente_detalle || '',
+      imagen_texto: response.data.texto_extraido || undefined
+    };
+    
+    setMessages(prev => [...prev, assistantMessage]);
+
     // 🔥 TRACKEAR LA CONSULTA EN GA4
     trackChatQuery(input || 'análisis de imagen');
     
   } catch (error: any) {
-    // ... manejo de errores ...
+    console.error('Error:', error);
+    
+    let mensajeError = '';
+    let mostrarBotonPro = false;
+    
+    if (error.response) {
+      const status = error.response.status;
+      const detail = error.response.data?.detail || '';
+      
+      if (status === 402) {
+        mensajeError = `⚠️ ${detail || 'Has alcanzado el límite de consultas gratuitas.'}`;
+        mostrarBotonPro = true;
+      } else if (status === 401) {
+        mensajeError = '⏳ Tu sesión ha expirado. Inicia sesión nuevamente.';
+        setTimeout(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          window.location.reload();
+        }, 3000);
+      } else if (status === 429) {
+        mensajeError = '📈 Demasiadas consultas. Espera unos segundos.';
+      } else if (status === 500) {
+        mensajeError = '🔧 Error en el servidor. Intentamos solucionarlo.';
+      } else {
+        mensajeError = `❌ Error: ${detail || 'Intenta nuevamente.'}`;
+      }
+    } else if (error.request) {
+      mensajeError = '🌐 No se pudo conectar con el servidor. Verifica tu conexión.';
+    } else {
+      mensajeError = `❌ Error inesperado: ${error.message || 'Intenta nuevamente.'}`;
+    }
+    
+    const mensajeCompleto = mostrarBotonPro 
+      ? `${mensajeError}\n\n📈 **Actualiza a Pro** para tener consultas ilimitadas y acceder a todas las funcionalidades.`
+      : mensajeError;
+    
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: mensajeCompleto,
+      timestamp: new Date(),
+      showUpgradeButton: mostrarBotonPro
+    }]);
+    
+    setTipeo(false);
+    
   } finally {
     setLoading(false);
     setSubiendoImagen(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 };
-      
-
-      
-      let mensajeError = '';
-      let mostrarBotonPro = false;
-      
-      if (error.response) {
-        const status = error.response.status;
-        const detail = error.response.data?.detail || '';
-        
-        if (status === 402) {
-          mensajeError = `⚠️ ${detail || 'Has alcanzado el límite de consultas gratuitas.'}`;
-          mostrarBotonPro = true;
-        } else if (status === 401) {
-          mensajeError = '⏳ Tu sesión ha expirado. Inicia sesión nuevamente.';
-          setTimeout(() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            window.location.reload();
-          }, 3000);
-        } else if (status === 429) {
-          mensajeError = '📈 Demasiadas consultas. Espera unos segundos.';
-        } else if (status === 500) {
-          mensajeError = '🔧 Error en el servidor. Intentamos solucionarlo.';
-        } else {
-          mensajeError = `❌ Error: ${detail || 'Intenta nuevamente.'}`;
-        }
-      } else if (error.request) {
-        mensajeError = '🌐 No se pudo conectar con el servidor. Verifica tu conexión.';
-      } else {
-        mensajeError = `❌ Error inesperado: ${error.message || 'Intenta nuevamente.'}`;
-      }
-      
-      const mensajeCompleto = mostrarBotonPro 
-        ? `${mensajeError}\n\n📈 **Actualiza a Pro** para tener consultas ilimitadas y acceder a todas las funcionalidades.`
-        : mensajeError;
-      
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: mensajeCompleto,
-        timestamp: new Date(),
-        showUpgradeButton: mostrarBotonPro
-      }]);
-      
-      setTipeo(false);
-      
-    } finally {
-      setLoading(false);
-      setSubiendoImagen(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  };
-
   const copyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedMessageId(messageId);
