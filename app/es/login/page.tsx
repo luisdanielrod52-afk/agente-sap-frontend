@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import { trackLogin } from '../../../components/Analytics';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,6 +32,10 @@ export default function LoginPage() {
         localStorage.setItem('token', response.data.access_token);
         localStorage.setItem('username', response.data.usuario || username);
         router.push('/es/chat');
+  // 🔥 TRACKEAR EL LOGIN EN GA4
+  trackLogin('password');
+  
+  router.push('/es/chat');
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al iniciar sesión');

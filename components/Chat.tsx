@@ -11,6 +11,7 @@ import Historial from './Historial';
 import ExportPDF from './ExportPDF';
 import LanguageSelector from './LanguageSelector';
 import UpgradeButton from './UpgradeButton';
+import { trackChatQuery } from './Analytics';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -193,17 +194,17 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if ((!input.trim() && !imagen) || loading || subiendoImagen) return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if ((!input.trim() && !imagen) || loading || subiendoImagen) return;
 
-    setLoading(true);
-    setSubiendoImagen(true);
-    setTipeo(false);
-    setMostrarSugerencias(false);
+  setLoading(true);
+  setSubiendoImagen(true);
+  setTipeo(false);
+  setMostrarSugerencias(false);
 
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://agente-sap-hcm.onrender.com';
       
       const userContent = input.trim() 
         ? (imagen ? `${input.trim()} [📎 Imagen adjunta]` : input.trim())
@@ -261,9 +262,21 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+    setMessages(prev => [...prev, assistantMessage]);
+    
+    // 🔥 TRACKEAR LA CONSULTA EN GA4
+    trackChatQuery(input || 'análisis de imagen');
+    
+  } catch (error: any) {
+    // ... manejo de errores ...
+  } finally {
+    setLoading(false);
+    setSubiendoImagen(false);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }
+};
       
-    } catch (error: any) {
-      console.error('Error:', error);
+
       
       let mensajeError = '';
       let mostrarBotonPro = false;
