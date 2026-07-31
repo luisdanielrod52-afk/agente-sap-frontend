@@ -10,6 +10,7 @@ import CodeBlock from './CodeBlock';
 import Historial from './Historial';
 import ExportPDF from './ExportPDF';
 import LanguageSelector from './LanguageSelector';
+import UpgradeButton from './UpgradeButton';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -63,6 +64,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const [loadingText, setLoadingText] = useState('Consultando documentación...');
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
   const [userFullName, setUserFullName] = useState<string>(username || '');
+  const [userPlan, setUserPlan] = useState<string>('gratis');
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [tipeo, setTipeo] = useState(false);
   
@@ -75,6 +77,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Efecto para mostrar sugerencias después de 3 mensajes
   useEffect(() => {
     const countUserMessages = messages.filter(m => m.role === 'user').length;
     if (countUserMessages >= 3 && countUserMessages % 2 === 1) {
@@ -96,6 +99,9 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           setUserFullName(`${data.nombre} ${data.apellido}`);
         } else if (data.nombre) {
           setUserFullName(data.nombre);
+        }
+        if (data.plan) {
+          setUserPlan(data.plan);
         }
       } catch (error) {
         console.error('Error obteniendo datos del usuario:', error);
@@ -397,6 +403,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
           <div className="flex items-center gap-2 sm:gap-3">
             <ExportPDF messages={messages} username={userFullName || username} />
             <LanguageSelector />
+            <UpgradeButton plan={userPlan} />
             <Historial token={token} onSelectConversacion={cargarConversacion} />
             <UserMenu username={userFullName || username || 'Usuario'} onLogout={onLogout} />
           </div>
@@ -459,7 +466,7 @@ export default function Chat({ token, onLogout, username }: { token: string; onL
                             Actualiza a Pro y obtén consultas ilimitadas, soporte prioritario y mucho más.
                           </p>
                           <button
-                            onClick={() => router.push('/pricing')}
+                            onClick={() => router.push('/es/pricing')}
                             className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-md hover:shadow-lg"
                           >
                             📊 Ver planes y precios
